@@ -1063,6 +1063,24 @@ interface Section {
   content: JSX.Element;
 }
 
+// Add this type for the progress and correctAnswers objects
+type CategoryScores = {
+  math: number;
+  writing: number;
+  smartypants: number;
+};
+
+// Then update the DailyProgress interface
+interface DailyProgress {
+  completed: boolean;
+  score: number;
+  timeRemaining: number;
+  currentCategory: keyof CategoryScores;
+  correctAnswers: CategoryScores;
+  lastPlayed: string; // Add this missing property
+  currentQuestionIndex: number;
+}
+
 interface UserProgress {
   points: number;
   streak: number;
@@ -1378,30 +1396,6 @@ const SATPrep = () => {
     });
     handleSectionChange('daily');
   };
-
-  const ScoreDisplay = () => (
-    <div className="grid grid-cols-3 gap-4 mb-6">
-      <div className="text-center p-4 rounded-lg bg-gray-800 text-gray-100">
-        <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-        <div className="text-2xl font-bold text-yellow-400">
-          {userProgress.points}
-        </div>
-        <div className="text-sm text-gray-300">Points</div>
-      </div>
-      <div className="text-center p-4 rounded-lg bg-gray-800 text-gray-100">
-        <Zap className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-        <div className="text-2xl font-bold text-orange-400">{userProgress.streak}</div>
-        <div className="text-sm text-gray-300">Streak</div>
-      </div>
-      <div className="text-center p-4 rounded-lg bg-gray-800 text-gray-100">
-        <Trophy className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-        <div className="text-2xl font-bold text-purple-400">
-          {Math.floor(userProgress.points / 100)}
-        </div>
-        <div className="text-sm text-gray-300">Level</div>
-      </div>
-    </div>
-  );
 
   const sections: Record<SectionKey, Section> = {
     home: {
@@ -1852,7 +1846,7 @@ const SATPrep = () => {
           </div>
 
           <div className="grid grid-cols-3 gap-4 mb-6">
-            {Object.entries(dailyChallengeState.progress).map(([category, progress]) => (
+            {Object.entries(dailyChallengeState.progress).map(([category, _progress]) => (
               <div
                 key={category}
                 className={cn(
@@ -1870,8 +1864,8 @@ const SATPrep = () => {
                 </div>
                 <div className="flex justify-center space-x-2">
                   {Array.from({ length: 3 }).map((_, index) => {
-                    const questionAttempted = index < dailyChallengeState.progress[category];
-                    const isCorrect = index < dailyChallengeState.correctAnswers[category];
+                    const questionAttempted = index < dailyChallengeState.progress[category as keyof CategoryScores];
+                    const isCorrect = index < dailyChallengeState.correctAnswers[category as keyof CategoryScores];
                     return (
                       <div
                         key={index}
@@ -2180,16 +2174,16 @@ const SATPrep = () => {
     }
   };
 
-  // Show celebrations at certain points
-  {dailyChallengeState.streak === 5 && (
-    <Celebration message="5× Streak! Maximum Multiplier!" />
-  )}
-  {dailyChallengeState.points >= 100 && (
-    <Celebration message="100 Points! You're On Fire! 🔥" />
-  )}
-
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100 p-4">
+      {/* Show celebrations at certain points */}
+      {dailyChallengeState.streak === 5 && (
+        <Celebration message="5× Streak! Maximum Multiplier!" />
+      )}
+      {dailyChallengeState.points >= 100 && (
+        <Celebration message="100 Points! You're On Fire! 🔥" />
+      )}
+
       <div className="max-w-6xl mx-auto">
         {/* Top Navigation - Only shows when not on home page */}
         {activeSection !== 'home' && (
