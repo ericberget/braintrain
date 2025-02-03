@@ -1,23 +1,71 @@
-import { useState, useEffect } from 'react';
-import { useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
-  Calculator, 
-  Home, 
-  Star, 
-  Trophy, 
-  Zap, 
-  Calendar, 
-  Pen, 
-  BookOpen, 
+  Calculator,
+  Pen,
   GraduationCap,
-  Brain,
-  Lightbulb
+  BookOpen,
+  Lightbulb,
+  Calendar,
+  Star,
+  Zap,
+  Trophy
 } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
-import { Alert } from './ui/alert';
-import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import { loadProgress, saveProgress, getInitialProgress } from '../lib/storage';
+import { Card, CardContent } from './ui/card';
+import { cn } from '@/lib/utils';
+import { startOfDay } from 'date-fns';
+
+interface Question {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+  difficulty?: 'elementary' | 'middle' | 'high';
+  grade?: number;
+  topic?: string;
+  context?: string;
+}
+
+const mathQuestions: Question[] = [
+  {
+    question: "Solve: 2x + 5 = 13",
+    options: ["x = 3", "x = 4", "x = 5", "x = 6"],
+    correctIndex: 1,
+    explanation: "To solve, subtract 5 from both sides: 2x = 8, then divide by 2: x = 4",
+    topic: "algebra",
+    grade: 7
+  },
+  // ... rest of math questions
+];
+
+const writingQuestions: Question[] = [
+  {
+    question: "Which sentence uses correct punctuation?",
+    options: [
+      "The cat slept on the windowsill, it was sunny.",
+      "The cat slept on the windowsill; it was sunny.",
+      "The cat slept on the windowsill it was sunny.",
+      "The cat slept on the windowsill... it was sunny."
+    ],
+    correctIndex: 1,
+    explanation: "A semicolon correctly joins two related independent clauses.",
+    topic: "punctuation",
+    grade: 7
+  },
+  // Add at least one more writing question
+];
+
+const smartypantsQuestions: Question[] = [
+  {
+    question: "What is the capital of Japan?",
+    options: ["Seoul", "Tokyo", "Beijing", "Bangkok"],
+    correctIndex: 1,
+    explanation: "Tokyo is the capital city of Japan.",
+    topic: "geography",
+    grade: 6
+  },
+  // Add at least one more smartypants question
+];
 
 const vocabWords = [
   {
@@ -517,99 +565,6 @@ const vocabWords = [
   }
 ];
 
-const mathProblems = [
-  {
-    question: 'What is 25% of 80?',
-    options: ['15', '20', '25', '30'],
-    correctIndex: 1,
-    explanation: '25% is the same as ¼, so divide 80 by 4 to get 20'
-  },
-  {
-    question: 'If x + 7 = 15, what is x?',
-    options: ['7', '8', '9', '22'],
-    correctIndex: 1,
-    explanation: 'Subtract 7 from both sides: x = 15 - 7 = 8'
-  },
-  {
-    question: '75% of what number is 30?',
-    options: ['40', '45', '35', '25'],
-    correctIndex: 0,
-    explanation: 'If 75% (¾) of a number is 30, then the whole number is 30 × ⁴⁄₃ = 40'
-  },
-  {
-    question: 'If a triangle has angles measuring 45° and 45°, what is the measure of the third angle?',
-    options: ['45°', '90°', '180°', '360°'],
-    correctIndex: 1,
-    explanation: 'The angles in a triangle sum to 180°. If two angles are 45°, then 180° - (45° + 45°) = 90°'
-  },
-  { 
-    question: 'Solve for x: 3x + 7 = 22',
-    options: ['5', '15', '8', '3'],
-    correctIndex: 0,
-    explanation: 'Subtract 7 from both sides: 3x = 15, then divide by 3: x = 5'
-  },
-  {
-    question: 'If x + 3 = 10, what is x?',
-    options: ['5', '7', '13', '6'],
-    correctIndex: 1,
-    explanation: 'Subtract 3 from both sides: x = 10 - 3 = 7'
-  },
-  {
-    question: 'Solve: 2x = 14',
-    options: ['5', '6', '7', '8'],
-    correctIndex: 2,
-    explanation: 'Divide both sides by 2: x = 14 ÷ 2 = 7'
-  },
-  {
-    question: 'What is the value of y if y - 5 = 3?',
-    options: ['8', '2', '-2', '6'],
-    correctIndex: 0,
-    explanation: 'Add 5 to both sides: y = 3 + 5 = 8'
-  },
-  {
-    question: 'If 3x = 21, what is x?',
-    options: ['6', '7', '8', '9'],
-    correctIndex: 1,
-    explanation: 'Divide both sides by 3: x = 21 ÷ 3 = 7'
-  },
-  {
-    question: 'Solve: x + 8 = 15',
-    options: ['7', '23', '6', '8'],
-    correctIndex: 0,
-    explanation: 'Subtract 8 from both sides: x = 15 - 8 = 7'
-  },
-  {
-    question: 'What is n if n ÷ 4 = 3?',
-    options: ['12', '7', '1', '15'],
-    correctIndex: 0,
-    explanation: 'Multiply both sides by 4: n = 3 × 4 = 12'
-  },
-  {
-    question: 'If y - 3 = 7, what is y?',
-    options: ['4', '10', '5', '8'],
-    correctIndex: 1,
-    explanation: 'Add 3 to both sides: y = 7 + 3 = 10'
-  },
-  {
-    question: 'Solve: 5x = 25',
-    options: ['5', '20', '4', '6'],
-    correctIndex: 0,
-    explanation: 'Divide both sides by 5: x = 25 ÷ 5 = 5'
-  },
-  {
-    question: 'What is x if x + 5 = 12?',
-    options: ['7', '17', '6', '8'],
-    correctIndex: 0,
-    explanation: 'Subtract 5 from both sides: x = 12 - 5 = 7'
-  },
-  {
-    question: 'If 2y = 16, what is y?',
-    options: ['32', '14', '8', '4'],
-    correctIndex: 2,
-    explanation: 'Divide both sides by 2: y = 16 ÷ 2 = 8'
-  },
-];
-
 const readingPassages = [
   {
     title: "The Scientific Method",
@@ -673,326 +628,16 @@ const readingPassages = [
   }
 ];
 
-const writingProblems = [
-  {
-    context: "Choose the correct word: affect vs effect",
-    sentence: "The medicine will [affect / effect] how quickly you recover.",
-    options: [
-      "affect",
-      "effect",
-      "effekt",
-      "affekt"
-    ],
-    correctIndex: 0,
-    explanation: "'Affect' is a verb meaning to influence something. 'Effect' is usually a noun meaning the result."
-  },
-  {
-    context: "Choose the correct word: their, there, or they're",
-    sentence: "The students left [their / there / they're] books on the desk.",
-    options: [
-      "there",
-      "their",
-      "they're",
-      "there're"
-    ],
-    correctIndex: 1,
-    explanation: "'Their' shows possession - the books belong to the students."
-  },
-  {
-    context: "Choose the correct word: their, there, or they're",
-    sentence: "[Their / There / They're] going to love the surprise party!",
-    options: [
-      "Their",
-      "There",
-      "They're",
-      "There're"
-    ],
-    correctIndex: 2,
-    explanation: "'They're' is a contraction of 'they are' - They are going to love the party."
-  },
-  {
-    context: "Choose the correct word: their, there, or they're",
-    sentence: "Put the box over [their/there/they're] by the door.",
-    options: [
-      "their",
-      "there",
-      "they're",
-      "there're"
-    ],
-    correctIndex: 1,
-    explanation: "'There' refers to a location or place - in this case, by the door."
-  },
-  {
-    context: "Choose the correct word: accept vs except",
-    sentence: "I will [accept/except] your apology.",
-    options: [
-      "accept",
-      "except",
-      "acept",
-      "excepts"
-    ],
-    correctIndex: 0,
-    explanation: "'Accept' means to receive or agree to something. 'Except' means to exclude."
-  },
-  {
-    context: "Choose the correct punctuation.",
-    sentence: "The scientist explained her findings[,] and then she answered questions from the audience.",
-    options: [
-      ", and then",
-      "; and then",
-      ". Then",
-      "; then"
-    ],
-    correctIndex: 2,
-    explanation: "These are independent clauses that can stand alone as complete sentences. Use a period to avoid a run-on sentence."
-  },
-  {
-    context: "Choose the most concise version.",
-    sentence: "[Due to the fact that] it was raining, the game was cancelled.",
-    options: [
-      "Due to the fact that",
-      "Because",
-      "As a result of",
-      "Owing to the fact that"
-    ],
-    correctIndex: 1,
-    explanation: "Use 'Because' for a more concise and direct expression."
-  },
-  {
-    context: "Choose the correct word: loose vs lose",
-    sentence: "Don't [loose / lose] your keys again!",
-    options: [
-      "loose",
-      "lose",
-      "lost",
-      "loost"
-    ],
-    correctIndex: 1,
-    explanation: "'Lose' means to misplace something. 'Loose' means not tight."
-  },
-  {
-    context: "Choose the correct word: weather vs whether",
-    sentence: "I don't know [weather/whether] to bring a jacket.",
-    options: [
-      "weather",
-      "whether",
-      "wether",
-      "wheather"
-    ],
-    correctIndex: 1,
-    explanation: "'Whether' expresses a choice or doubt. 'Weather' refers to atmospheric conditions."
-  },
-  {
-    context: "Choose the correct verb form.",
-    sentence: "Each of the students [have] completed their assignments.",
-    options: [
-      "have",
-      "has",
-      "having",
-      "had"
-    ],
-    correctIndex: 1,
-    explanation: "The subject 'Each' is singular, so use the singular verb 'has'."
-  },
-  {
-    context: "Choose the correct pronoun.",
-    sentence: "The award was shared between Sarah and [I/me].",
-    options: [
-      "I",
-      "me",
-      "myself",
-      "mine"
-    ],
-    correctIndex: 1,
-    explanation: "Use the object pronoun 'me' after prepositions like 'between'."
-  },
-  {
-    context: "Choose the best word order.",
-    sentence: "The teacher [quickly and efficiently graded] all the tests.",
-    options: [
-      "quickly and efficiently graded",
-      "graded quickly and efficiently",
-      "did grade quickly and efficiently",
-      "was quick and efficient in grading"
-    ],
-    correctIndex: 1,
-    explanation: "Place adverbs after the verb they modify for clearer meaning."
-  },
-  {
-    context: "Fix the parallel structure.",
-    sentence: "The coach told the team to [run fast, jumping high, and score points].",
-    options: [
-      "run fast, jumping high, and score points",
-      "run fast, jump high, and score points",
-      "run fast, to jump high, and scoring points",
-      "running fast, jumping high, and scoring points"
-    ],
-    correctIndex: 1,
-    explanation: "Use parallel structure with three infinitive verbs: run, jump, score."
-  },
-  {
-    context: "Choose the correct verb tense.",
-    sentence: "Yesterday, she [go] to the store.",
-    options: [
-      "go",
-      "goes",
-      "went",
-      "going"
-    ],
-    correctIndex: 2,
-    explanation: "Use the past tense 'went' for actions that happened in the past (yesterday)."
-  },
-  {
-    context: "Fix the spelling error.",
-    sentence: "The [recieved] package arrived on time.",
-    options: [
-      "recieved",
-      "received",
-      "receved",
-      "receieved"
-    ],
-    correctIndex: 1,
-    explanation: "Remember the rule: 'i' before 'e' except after 'c'."
-  },
-  {
-    context: "Choose the correct word.",
-    sentence: "[Your/You're] going to love this movie!",
-    options: [
-      "your",
-      "you're",
-      "youre",
-      "yours"
-    ],
-    correctIndex: 1,
-    explanation: "'You're' is a contraction of 'you are'. 'Your' shows possession."
-  },
-  {
-    context: "Fix the sentence.",
-    sentence: "The dog [who/which] lives next door barks a lot.",
-    options: [
-      "who",
-      "which",
-      "that",
-      "whom"
-    ],
-    correctIndex: 1,
-    explanation: "Use 'which' for things and animals, 'who' for people."
-  },
-  {
-    context: "Choose the correct plural form.",
-    sentence: "There are three [child] playing in the park.",
-    options: [
-      "child",
-      "childs",
-      "childrens",
-      "children"
-    ],
-    correctIndex: 3,
-    explanation: "'Children' is an irregular plural - it doesn't follow the normal 's' rule."
-  },
-  {
-    context: "Fix the capitalization.",
-    sentence: "[john] lives in new york city.",
-    options: [
-      "john lives in new york city",
-      "John lives in new york city",
-      "John lives in New York City",
-      "john lives in New york City"
-    ],
-    correctIndex: 2,
-    explanation: "Capitalize names (John) and place names (New York City)."
-  },
-  {
-    context: "Choose the correct word.",
-    sentence: "Can you [their/there/they're] help me with this?",
-    options: [
-      "their",
-      "there",
-      "they're",
-      "theyre"
-    ],
-    correctIndex: 1,
-    explanation: "'There' refers to location or existence. 'Their' shows possession. 'They're' means 'they are'."
-  },
-  {
-    context: "Fix the sentence structure.",
-    sentence: "[Me and Tom] went to the movies.",
-    options: [
-      "Me and Tom",
-      "Tom and me",
-      "Tom and I",
-      "Me and I"
-    ],
-    correctIndex: 2,
-    explanation: "Use 'I' when it's the subject, and put the other person first."
-  },
-];
-
-const smartyPantsProblems = [
-  {
-    question: 'Which ancient civilization built the pyramids of Giza?',
-    options: ['Romans', 'Greeks', 'Egyptians', 'Persians'],
-    correctIndex: 2,
-    explanation: 'The pyramids of Giza were built by the ancient Egyptians around 2500 BCE as tombs for their pharaohs.'
-  },
-  {
-    question: 'Who painted the Mona Lisa?',
-    options: ['Vincent van Gogh', 'Leonardo da Vinci', 'Pablo Picasso', 'Michelangelo'],
-    correctIndex: 1,
-    explanation: 'Leonardo da Vinci painted the Mona Lisa in the early 16th century. It is now displayed in the Louvre Museum in Paris.'
-  },
-  {
-    question: 'The Mediterranean Sea is bordered by all of these countries EXCEPT:',
-    options: ['Germany', 'Spain', 'Greece', 'Italy'],
-    correctIndex: 0,
-    explanation: 'Germany is nowhere near the Mediterranean Sea - it\'s located in northern Europe on the North and Baltic Seas. Spain, Greece, and Italy are all famous for their Mediterranean coastlines and beaches.'
-  },
-  {
-    question: 'What is the largest planet in our solar system?',
-    options: ['Mars', 'Jupiter', 'Saturn', 'Neptune'],
-    correctIndex: 1,
-    explanation: 'Jupiter is the largest planet in our solar system - it could fit over 1,300 Earths inside it!'
-  },
-  {
-    question: 'Which of these animals is NOT a mammal?',
-    options: ['Dolphin', 'Snake', 'Bat', 'Whale'],
-    correctIndex: 1,
-    explanation: 'Snakes are reptiles, while dolphins, bats, and whales are all mammals.'
-  },
-  {
-    question: 'What is the hardest natural substance on Earth?',
-    options: ['Gold', 'Diamond', 'Iron', 'Platinum'],
-    correctIndex: 1,
-    explanation: 'Diamonds are the hardest natural substance found on Earth, rating 10 on the Mohs scale of hardness.'
-  },
-  {
-    question: 'Which continent is the driest on Earth?',
-    options: ['Africa', 'Antarctica', 'Asia', 'Australia'],
-    correctIndex: 1,
-    explanation: 'Antarctica is the driest continent, technically a desert due to its extremely low precipitation.'
-  },
-  {
-    question: 'What is the smallest prime number?',
-    options: ['0', '1', '2', '3'],
-    correctIndex: 2,
-    explanation: '2 is the smallest prime number and the only even prime number.'
-  },
-  {
-    question: 'Which gas do plants absorb from the air?',
-    options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Hydrogen'],
-    correctIndex: 1,
-    explanation: 'Plants absorb carbon dioxide from the air during photosynthesis and release oxygen.'
-  },
-  {
-    question: 'What is the main function of white blood cells?',
-    options: ['Carry oxygen', 'Fight infection', 'Carry nutrients', 'Clot blood'],
-    correctIndex: 1,
-    explanation: 'White blood cells are part of the immune system and help fight infections in the body.'
-  }
-];
-
-const playSound = (soundName: 'correct' | 'incorrect', volume: number = 0.2) => {
-  const audio = new Audio(`/sounds/${soundName === 'correct' ? 'correctding' : 'wrong'}.wav`);
+const playSound = (soundName: 'correct' | 'incorrect' | 'tick' | 'timeWarning' | 'timeUp', volume: number = 0.2) => {
+  const soundMap = {
+    correct: 'correctding',
+    incorrect: 'wrong',
+    tick: 'tick',
+    timeWarning: 'timewarning',
+    timeUp: 'timeup'
+  };
+  
+  const audio = new Audio(`/sounds/${soundMap[soundName]}.wav`);
   audio.volume = volume;
   audio.play().catch(error => {
     console.log('Audio playback failed:', error);
@@ -1158,1169 +803,714 @@ const Celebration = ({ message }: { message: string }) => (
   </motion.div>
 );
 
-const SATPrep = () => {
-  const [activeSection, setActiveSection] = useState<SectionKey>('home');
-  const [currentWord, setCurrentWord] = useState(() => {
-    // Initialize with a random word index
-    return Math.floor(Math.random() * vocabWords.length);
-  });
-  const [currentProblem, setCurrentProblem] = useState(0);
-  const [currentPassage, setCurrentPassage] = useState(0);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [isCorrect, setIsCorrect] = useState(false);
-  const [userProgress, setUserProgress] = useState<UserProgress>(() => 
-    loadProgress() || getInitialProgress()
+// Add this near your other interfaces
+interface AboutModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+function AboutModal({ isOpen, onClose }: AboutModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-gray-200 p-6 rounded-lg max-w-2xl w-full">
+        <h2 className="text-2xl font-bold mb-4">About Wiz Kid</h2>
+        <div className="space-y-4">
+          <p>
+            Wiz Kid is a daily learning companion that helps homeschooled middle schoolers stay on grade level through gamified practice challenges. It's like a personal academic trainer that prevents learning loss and keeps students engaged with core subjects through consistent, bite-sized daily exercises.
+          </p>
+          <p>
+            Our Daily Challenge feature offers a fresh set of questions each day across math, writing, and general knowledge. Complete these challenges to build streaks and earn points, making learning a fun daily habit.
+          </p>
+          <p>
+            In the Practice section, you can focus on specific subjects and topics at your own pace. This is perfect for areas where you want extra practice or need to strengthen your understanding.
+          </p>
+        </div>
+        <button
+          onClick={onClose}
+          className="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
   );
-  const [mathMode, setMathMode] = useState<'relaxed' | 'timebomb'>('relaxed');
-  const [timeBombState, setTimeBombState] = useState<TimeBombState>({
-    timeLeft: 180, // 3 minutes in seconds
-    strikes: 3,
-    correctAnswers: 0,
-    isActive: false
-  });
-  const [dailyChallengeState, setDailyChallengeState] = useState<DailyChallengeState>(() => ({
-    timeLeft: userProgress.dailyChallenge.timeRemaining,
-    isActive: false,
-    currentCategory: userProgress.dailyChallenge.currentCategory,
-    progress: userProgress.dailyChallenge.correctAnswers,
-    correctAnswers: userProgress.dailyChallenge.correctAnswers,
-    points: userProgress.dailyChallenge.score,
-    currentQuestionIndex: userProgress.dailyChallenge.currentQuestionIndex,
-    streak: 0,
-    multiplier: 1
-  }));
-  
+}
+
+// Add this function near the top of your file
+function getRandomForDay(category: string, max: number) {
+  const today = startOfDay(new Date());
+  const seed = today.getTime() + category.charCodeAt(0);
+  return Math.abs(Math.floor((seed / 10000) % max));
+}
+
+interface DailyQuestions {
+  math: Question;
+  writing: Question;
+  smartypants: Question;
+}
+
+const SATPrep = () => {
+  const [currentCategory, setCurrentCategory] = useState<'math' | 'writing' | 'smartypants'>('math');
+  const [dailyQuestions, setDailyQuestions] = useState<DailyQuestions | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('daily');
+  const [showDailyChallenge, setShowDailyChallenge] = useState(false);
+  const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
+  const [answered, setAnswered] = useState(false);
+  const [score, setScore] = useState(0);
+  const [questionNumber, setQuestionNumber] = useState(0);
+  const [gameQuestions, setGameQuestions] = useState<Question[]>([]);
+  const [showGameOver, setShowGameOver] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(120);
   const timerRef = useRef<NodeJS.Timeout>();
-  const dailyTimerRef = useRef<NodeJS.Timeout>();
+  const hasPlayedWarningRef = useRef(false);
+  const hasPlayedUrgentRef = useRef(false);
 
-  const getRandomQuestion = (questions: any[], type: 'vocab' | 'math' | 'reading' | 'writing' | 'smartypants' = 'vocab') => {
-    const completed = userProgress.completedQuestions[type as keyof typeof userProgress.completedQuestions];
-    const available = questions
-      .map((_, index) => index)
-      .filter(index => !completed.includes(index));
-
-    if (available.length === 0) {
-      setUserProgress(prev => ({
-        ...prev,
-        completedQuestions: {
-          ...prev.completedQuestions,
-          [type]: []
-        }
-      }));
-      return Math.floor(Math.random() * questions.length);
-    }
-
-    return available[Math.floor(Math.random() * available.length)];
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   useEffect(() => {
-    saveProgress(userProgress);
-  }, [userProgress]);
-
-  useEffect(() => {
-    if (dailyChallengeState.isActive) {
-      setUserProgress(prev => ({
-        ...prev,
-        dailyChallenge: {
-          ...prev.dailyChallenge,
-          timeRemaining: dailyChallengeState.timeLeft,
-          currentCategory: dailyChallengeState.currentCategory,
-          correctAnswers: dailyChallengeState.correctAnswers,
-          score: dailyChallengeState.points,
-          currentQuestionIndex: dailyChallengeState.currentQuestionIndex
-        }
-      }));
+    try {
+      const questions = getDailyQuestions();
+      if (questions) {
+        setDailyQuestions(questions);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error initializing app:', error);
+      setIsLoading(false);
     }
-  }, [dailyChallengeState]);
-
-  useEffect(() => {
-    setCurrentWord(getRandomQuestion(vocabWords, 'vocab'));
-    setCurrentProblem(getRandomQuestion(mathProblems, 'math'));
   }, []);
 
-  useEffect(() => {
-    if (timeBombState.isActive) {
-      timerRef.current = setInterval(() => {
-        setTimeBombState(prev => {
-          if (prev.timeLeft <= 1) {
-            clearInterval(timerRef.current);
-            return { ...prev, timeLeft: 0, isActive: false };
-          }
-          return { ...prev, timeLeft: prev.timeLeft - 1 };
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timerRef.current);
-  }, [timeBombState.isActive]);
+  const getRandomForDay = (category: string, max: number) => {
+    const today = startOfDay(new Date());
+    const seed = today.getTime() + category.charCodeAt(0);
+    return Math.abs(Math.floor((seed / 10000) % max));
+  };
 
-  useEffect(() => {
-    if (dailyChallengeState.isActive) {
-      clearInterval(dailyTimerRef.current);
-      dailyTimerRef.current = setInterval(() => {
-        setDailyChallengeState(prev => {
-          if (prev.timeLeft <= 1) {
-            clearInterval(dailyTimerRef.current);
-            return { ...prev, timeLeft: 0, isActive: false };
-          }
-          return { ...prev, timeLeft: prev.timeLeft - 1 };
-        });
-      }, 1000);
-    }
-    return () => {
-      if (dailyTimerRef.current) {
-        clearInterval(dailyTimerRef.current);
+  const getDailyQuestions = (): DailyQuestions | null => {
+    try {
+      if (!mathQuestions?.length || !writingQuestions?.length || !smartypantsQuestions?.length) {
+        console.error('Question arrays not properly loaded');
+        return null;
       }
-    };
-  }, [dailyChallengeState.isActive]);
-
-  const handleSectionChange = (section: string) => {
-    setActiveSection(section as SectionKey);
-    setShowFeedback(false);
-    
-    if (section === 'vocabulary') {
-      setCurrentWord(Math.floor(Math.random() * vocabWords.length));
-    } else if (section === 'comprehension') {
-      setCurrentPassage(Math.floor(Math.random() * readingPassages.length));
-    } else if (section === 'smartypants') {
-      setCurrentProblem(0); // Start with the first question
+      
+      return {
+        math: mathQuestions[getRandomForDay('math', mathQuestions.length)],
+        writing: writingQuestions[getRandomForDay('writing', writingQuestions.length)],
+        smartypants: smartypantsQuestions[getRandomForDay('smartypants', smartypantsQuestions.length)]
+      };
+    } catch (error) {
+      console.error('Error getting daily questions:', error);
+      return null;
     }
   };
 
-  const handleAnswer = (problemIndex: number, selectedIndex: number, type: 'vocab' | 'math' | 'reading' | 'writing' | 'smartypants' = 'vocab') => {
-    let problems;
-    let correctIndex;
-    
-    switch(type) {
-      case 'vocab':
-        problems = vocabWords;
-        correctIndex = problems[problemIndex].correctIndex;
-        break;
-      case 'math':
-        problems = mathProblems;
-        correctIndex = problems[problemIndex].correctIndex;
-        break;
-      case 'reading':
-        problems = readingPassages[currentPassage].questions;
-        correctIndex = problems[problemIndex].correctIndex;
-        break;
-      case 'writing':
-        problems = writingProblems;
-        correctIndex = problems[problemIndex].correctIndex;
-        break;
-      case 'smartypants':
-        problems = smartyPantsProblems;
-        correctIndex = problems[problemIndex].correctIndex;
-        break;
-      default:
-        problems = vocabWords;
-        correctIndex = problems[problemIndex].correctIndex;
-    }
-    
-    const correct = selectedIndex === correctIndex;
-    setIsCorrect(correct);
-    setShowFeedback(true);
-    
-    playSound(correct ? 'correct' : 'incorrect', 0.1);
-    
-    if (correct) {
-      const streakMultiplier = Math.min(dailyChallengeState.streak + 1, 5);
-      const timeBonus = Math.floor(dailyChallengeState.timeLeft / 30) * 5;
-      const points = (10 * streakMultiplier) + timeBonus;
-      
-      setDailyChallengeState(prev => ({
-        ...prev,
-        points: prev.points + points,
-        streak: prev.streak + 1,
-        multiplier: streakMultiplier
-      }));
-    } else {
-      setDailyChallengeState(prev => ({
-        ...prev,
-        streak: 0,
-        multiplier: 1
-      }));
-    }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading...</p>
+      </div>
+    );
+  }
 
-    setTimeout(() => {
-      setShowFeedback(false);
-      if (correct) {
-        if (type === 'vocab') {
-          let newIndex;
-          do {
-            newIndex = Math.floor(Math.random() * vocabWords.length);
-          } while (newIndex === currentWord);
-          setCurrentWord(newIndex);
-        } else if (type === 'math') {
-          setCurrentProblem(getRandomQuestion(mathProblems, 'math'));
-        } else if (type === 'reading') {
-          let newIndex;
-          do {
-            newIndex = Math.floor(Math.random() * readingPassages.length);
-          } while (newIndex === currentPassage);
-          setCurrentPassage(newIndex);
-        } else if (type === 'writing') {
-          setCurrentProblem(getRandomQuestion(writingProblems, 'writing'));
-        } else if (type === 'smartypants') {
-          // Only increment if we haven't reached the end of questions
-          if (currentProblem < smartyPantsProblems.length - 1) {
-            setCurrentProblem(currentProblem + 1);
-          } else {
-            // If we've reached the end, go back to the first question
-            setCurrentProblem(0);
-          }
-        }
-      }
-    }, 1500);
+  if (!dailyQuestions) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl text-red-500">Error: Could not load questions</p>
+      </div>
+    );
+  }
+
+  const handleSectionChange = (section: string) => {
+    setActiveSection(section);
   };
 
   const startDailyChallenge = () => {
-    clearInterval(dailyTimerRef.current);
-    setDailyChallengeState({
-      timeLeft: 300,
-      isActive: true,
-      currentCategory: 'math',
-      progress: {
-        math: 0,
-        writing: 0,
-        smartypants: 0
-      },
-      correctAnswers: {
-        math: 0,
-        writing: 0,
-        smartypants: 0
-      },
-      points: 0,
-      currentQuestionIndex: 0,
-      streak: 0,
-      multiplier: 1
-    });
-    handleSectionChange('daily');
+    // Reset sound effect flags
+    hasPlayedWarningRef.current = false;
+    hasPlayedUrgentRef.current = false;
+    
+    // Get 3 questions from each category
+    const mathQuestions = shuffleArray(mathProblems).slice(0, 3);
+    const writingQuestions = shuffleArray(writingProblems).slice(0, 3);
+    const smartyQuestions = shuffleArray(smartyPantsProblems).slice(0, 3);
+
+    // Combine and shuffle all questions
+    const allQuestions = shuffleArray([...mathQuestions, ...writingQuestions, ...smartyQuestions]);
+    
+    setGameQuestions(allQuestions);
+    setQuestionNumber(0);
+    setScore(0);
+    setShowDailyChallenge(true);
+    setCurrentQuestion(allQuestions[0]);
+    setAnswered(false);
+    setShowGameOver(false);
+    setTimeLeft(120);
+
+    // Start the timer
+    timerRef.current = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev === 30 && !hasPlayedWarningRef.current) {
+          playSound('timeWarning', 0.3);
+          hasPlayedWarningRef.current = true;
+        }
+        if (prev === 10 && !hasPlayedUrgentRef.current) {
+          playSound('tick', 0.3);
+          hasPlayedUrgentRef.current = true;
+        }
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          playSound('timeUp', 0.4);
+          setShowGameOver(true);
+          setShowDailyChallenge(false);
+          return 0;
+        }
+        if (prev <= 10) {
+          playSound('tick', 0.1);
+        }
+        return prev - 1;
+      });
+    }, 1000);
   };
 
-  const sections: Record<SectionKey, Section> = {
-    home: {
-      title: "Dashboard",
-      icon: <Home className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <Home className="w-8 h-8 text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-100">Welcome Back!</h2>
-              <p className="text-gray-400">Your learning journey continues</p>
-            </div>
-          </div>
-          
-          <div className="space-y-8">
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-yellow-400">
-                    {userProgress.points}
-                  </div>
-                  <div className="text-sm text-gray-300">Points</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Zap className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-orange-400">{userProgress.streak}</div>
-                  <div className="text-sm text-gray-300">Streak</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Trophy className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-purple-400">
-                    {Math.floor(userProgress.points / 100)}
-                  </div>
-                  <div className="text-sm text-gray-300">Level</div>
-                </CardContent>
-              </Card>
-            </div>
+  const handleAnswer = (selectedIndex: number) => {
+    if (answered || !currentQuestion) return;
+    
+    const isCorrect = selectedIndex === currentQuestion.correctIndex;
+    if (isCorrect) {
+      setScore(prev => prev + 10);
+      playSound('correct');
+    } else {
+      playSound('incorrect');
+    }
+    setAnswered(true);
+  };
 
-            {/* Daily Challenge Section - Made Larger */}
-            <Card className="bg-gray-800 border-0">
-              <CardContent className="p-8">
-                <div className="flex items-center space-x-3 mb-6">
-                  <Calendar className="w-10 h-10 text-blue-400" />
-                  <h2 className="text-2xl font-bold text-gray-100">Daily Challenge</h2>
-                </div>
-                <div className="text-center py-8">
-                  <h3 className="text-2xl font-bold mb-4 text-emerald-400">Today's Challenge</h3>
-                  <p className="text-gray-300 mb-8 text-lg">Complete 3 questions from each category</p>
-                  <button
-                    onClick={startDailyChallenge}
-                    className="w-full max-w-md px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-lg transition-colors"
-                  >
-                    Start Challenge
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Start / Focused Practice Section */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-100 mb-4">Focused Practice</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {[
-                  { key: 'vocabulary', title: 'Vocabulary', icon: <GraduationCap className="w-6 h-6" /> },
-                  { key: 'math', title: 'Math', icon: <Calculator className="w-6 h-6" /> },
-                  { key: 'comprehension', title: 'Reading', icon: <BookOpen className="w-6 h-6" /> },
-                  { key: 'writing', title: 'Writing', icon: <Pen className="w-6 h-6" /> },
-                  { key: 'smartypants', title: 'Smarty Pants', icon: <Lightbulb className="w-6 h-6" /> }
-                ].map(({ key, title, icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => handleSectionChange(key)}
-                    className="p-6 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-center group"
-                  >
-                    <div className="flex flex-col items-center space-y-2">
-                      <div className="p-3 rounded-full bg-gray-700 group-hover:bg-gray-600 transition-colors">
-                        {icon}
-                      </div>
-                      <span className="font-medium">{title}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    vocabulary: {
-      title: "Vocabulary",
-      icon: <GraduationCap className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <GraduationCap className="w-8 h-8 text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-100">Vocabulary Builder</h2>
-              <p className="text-gray-400">Expand your word knowledge</p>
-            </div>
-          </div>
-          
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentWord}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-2xl font-bold mb-4 bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text"
-                  >
-                    "{vocabWords[currentWord].word}"
-                  </motion.div>
-                </AnimatePresence>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentWord}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="space-y-3"
-                  >
-                    {vocabWords[currentWord].options.map((option, index) => (
-                      <AnswerButton
-                        key={index}
-                        option={option}
-                        index={index}
-                        isCorrect={index === vocabWords[currentWord].correctIndex}
-                        onClick={(idx) => handleAnswer(currentWord, idx, 'vocab')}
-                        revealed={showFeedback && index === vocabWords[currentWord].correctIndex}
-                      />
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-                {showFeedback && (
-                  <Alert className={isCorrect ? "bg-green-500/20" : "bg-red-500/20"}>
-                    <span className="text-white">
-                      {isCorrect ? `Correct! +${10 + Math.floor(userProgress.streak / 3) * 5} points` : "Try again!"}
-                    </span>
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    },
-    math: {
-      title: "Math Practice",
-      icon: <Calculator className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Calculator className="w-8 h-8 text-blue-400" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-100">Math Practice</h2>
-                <p className="text-gray-400">Solve mathematical problems</p>
-              </div>
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={() => {
-                  setMathMode('relaxed');
-                  setTimeBombState(prev => ({ ...prev, isActive: false }));
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-lg transition-colors",
-                  mathMode === 'relaxed' 
-                    ? "bg-blue-500 text-white" 
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                )}
-              >
-                Relaxed Mode
-              </button>
-              <button
-                onClick={() => {
-                  setMathMode('timebomb');
-                  setTimeBombState({
-                    timeLeft: 180,
-                    strikes: 3,
-                    correctAnswers: 0,
-                    isActive: true
-                  });
-                }}
-                className={cn(
-                  "px-4 py-2 rounded-lg transition-colors",
-                  mathMode === 'timebomb' 
-                    ? "bg-red-500 text-white" 
-                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                )}
-              >
-                Time Bomb Mode
-              </button>
-            </div>
-          </div>
-          
-          {mathMode === 'timebomb' && (
-            <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="text-red-400">
-                  <span className="text-lg">⚡ </span>
-                  {Array.from({ length: timeBombState.strikes }).map((_, i) => (
-                    <span key={i}>❤️</span>
-                  ))}
-                </div>
-                <div className="text-green-400">
-                  <span className="text-lg">✓ </span>
-                  {timeBombState.correctAnswers}/10
-                </div>
-              </div>
-              <div className="text-xl font-mono">
-                {Math.floor(timeBombState.timeLeft / 60)}:
-                {(timeBombState.timeLeft % 60).toString().padStart(2, '0')}
-              </div>
-            </div>
-          )}
-          
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentProblem}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-2xl font-medium p-6 rounded-lg bg-gray-700 text-gray-100"
-                  >
-                    {mathProblems[currentProblem].question}
-                  </motion.div>
-                </AnimatePresence>
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentProblem}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3, delay: 0.1 }}
-                    className="space-y-3"
-                  >
-                    {mathProblems[currentProblem].options.map((option, index) => (
-                      <AnswerButton
-                        key={index}
-                        option={option}
-                        index={index}
-                        isCorrect={index === mathProblems[currentProblem].correctIndex}
-                        onClick={(idx) => {
-                          if (mathMode === 'timebomb') {
-                            const correct = idx === mathProblems[currentProblem].correctIndex;
-                            setTimeBombState(prev => ({
-                              ...prev,
-                              strikes: correct ? prev.strikes : prev.strikes - 1,
-                              correctAnswers: correct ? prev.correctAnswers + 1 : prev.correctAnswers,
-                              isActive: prev.strikes > 1 && prev.correctAnswers < 9
-                            }));
-                          }
-                          handleAnswer(currentProblem, idx, 'math');
-                        }}
-                        revealed={showFeedback && index === mathProblems[currentProblem].correctIndex}
-                      />
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-                {mathMode === 'timebomb' && (
-                  timeBombState.correctAnswers >= 10 ? (
-                    <div className="text-center p-4 bg-green-500/20 rounded-lg">
-                      <h3 className="text-xl font-bold text-green-400">Victory! 🎉</h3>
-                      <p className="text-gray-300">You've completed the Time Bomb challenge!</p>
-                    </div>
-                  ) : timeBombState.strikes <= 0 || timeBombState.timeLeft <= 0 ? (
-                    <div className="text-center p-4 bg-red-500/20 rounded-lg">
-                      <h3 className="text-xl font-bold text-red-400">Game Over!</h3>
-                      <p className="text-gray-300">
-                        {timeBombState.strikes <= 0 ? "Out of lives!" : "Time's up!"}
-                      </p>
-                    </div>
-                  ) : null
-                )}
-                {showFeedback && (
-                  <Alert className={isCorrect ? "bg-green-500/20" : "bg-red-500/20"}>
-                    {isCorrect ? (
-                      <>
-                        <span className="text-white">
-                          Correct! +{10 + Math.floor(userProgress.streak / 3) * 5} points
-                        </span>
-                        <br />
-                        <span className="text-sm opacity-90">
-                          {mathProblems[currentProblem].explanation}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-white">Try again!</span>
-                    )}
-                  </Alert>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    },
-    comprehension: {
-      title: "Reading Comprehension",
-      icon: <BookOpen className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <BookOpen className="w-8 h-8 text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-100">Reading Comprehension</h2>
-              <p className="text-gray-400">Analyze and understand passages</p>
-            </div>
-          </div>
-          
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentPassage}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <h3 className="text-2xl font-bold mb-4 text-gray-100">{readingPassages[currentPassage].title}</h3>
-                    <p className="whitespace-pre-line text-lg text-gray-100">{readingPassages[currentPassage].text}</p>
-                  </motion.div>
-                </AnimatePresence>
-                <div className="space-y-6">
-                  {readingPassages[currentPassage].questions.map((q, qIndex) => (
-                    <div key={qIndex} className="space-y-4">
-                      <h3 className="font-semibold text-lg text-emerald-400">Question {qIndex + 1}</h3>
-                      <p className="text-xl text-gray-200 mb-4">{q.question}</p>
-                      <div className="space-y-3">
-                        {q.options.map((option, index) => (
-                          <AnswerButton
-                            key={index}
-                            option={option}
-                            index={index}
-                            isCorrect={index === q.correctIndex}
-                            onClick={(idx) => handleAnswer(qIndex, idx, 'reading')}
-                            revealed={showFeedback && currentProblem === qIndex && index === q.correctIndex}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    },
-    writing: {
-      title: "Writing & Language",
-      icon: <Pen className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <Pen className="w-8 h-8 text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-100">Writing & Language</h2>
-              <p className="text-gray-400">Improve grammar and style</p>
-            </div>
-          </div>
-          
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={currentProblem}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <p className="mb-2 text-lg text-emerald-400">{writingProblems[currentProblem].context}</p>
-                    <p className="text-2xl text-gray-100">{writingProblems[currentProblem].sentence}</p>
-                  </motion.div>
-                </AnimatePresence>
-                <div className="space-y-3">
-                  {writingProblems[currentProblem].options.map((option, index) => (
-                    <AnswerButton
-                      key={index}
-                      option={option}
-                      index={index}
-                      isCorrect={index === writingProblems[currentProblem].correctIndex}
-                      onClick={(idx) => handleAnswer(currentProblem, idx, 'writing')}
-                      revealed={showFeedback && index === writingProblems[currentProblem].correctIndex}
-                    />
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )
-    },
-    daily: {
-      title: "Daily Challenge",
-      icon: <Calendar className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Calendar className="w-8 h-8 text-blue-400" />
-              <div>
-                <h2 className="text-2xl font-bold text-gray-100">Daily Challenge</h2>
-                <p className="text-gray-400">Complete all categories</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-48 h-2 bg-gray-700 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-emerald-500"
-                  initial={{ width: '100%' }}
-                  animate={{ 
-                    width: `${(dailyChallengeState.timeLeft / 300) * 100}%`,
-                    backgroundColor: dailyChallengeState.timeLeft < 120 
-                      ? dailyChallengeState.timeLeft < 60 
-                        ? '#ef4444' // red-500
-                        : '#f59e0b' // amber-500
-                      : '#10b981' // emerald-500
-                  }}
-                  transition={{ duration: 1 }}
-                />
-              </div>
-              <div className="text-xl font-mono text-gray-300 w-16">
-                {Math.floor(dailyChallengeState.timeLeft / 60)}:
-                {(dailyChallengeState.timeLeft % 60).toString().padStart(2, '0')}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4 mb-6">
-            {Object.entries(dailyChallengeState.progress).map(([category, _progress]) => (
-              <div
-                key={category}
-                className={cn(
-                  "p-4 rounded-lg",
-                  dailyChallengeState.currentCategory === category 
-                    ? "bg-gray-800/80" 
-                    : "bg-gray-800"
-                )}
-              >
-                <div className="flex flex-col items-center mb-3">
-                  {category === 'math' && <Calculator className="w-5 h-5 mb-1 text-blue-400" />}
-                  {category === 'writing' && <Pen className="w-5 h-5 mb-1 text-emerald-400" />}
-                  {category === 'smartypants' && <Brain className="w-5 h-5 mb-1 text-purple-400" />}
-                  <div className="font-medium capitalize text-center">{category}</div>
-                </div>
-                <div className="flex justify-center space-x-2">
-                  {Array.from({ length: 3 }).map((_, index) => {
-                    const questionAttempted = index < dailyChallengeState.progress[category as keyof CategoryScores];
-                    const isCorrect = index < dailyChallengeState.correctAnswers[category as keyof CategoryScores];
-                    return (
-                      <div
-                        key={index}
-                        className={cn(
-                          "w-4 h-4 rounded-full flex items-center justify-center",
-                          questionAttempted
-                            ? isCorrect
-                              ? "bg-green-500 text-white"
-                              : "bg-red-500 text-white"
-                            : "bg-gray-700"
-                        )}
-                      >
-                        {questionAttempted && (
-                          isCorrect
-                            ? <span className="text-xs">✓</span>
-                            : <span className="text-xs">×</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center justify-center mb-6">
-            <div className="px-6 py-3 bg-gray-800 rounded-lg">
-              <div className="flex flex-col items-center space-y-1">
-                <span className="text-emerald-400 font-bold text-xl">
-                  +{dailyChallengeState.points} Points
-                </span>
-                <span className="text-gray-400 text-sm">
-                  Total: {userProgress.points}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={`${dailyChallengeState.currentCategory}-${dailyChallengeState.currentQuestionIndex}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="space-y-6">
-                    <div className="p-6 rounded-lg bg-gray-700 text-gray-100">
-                      <p className="text-2xl">
-                        {dailyChallengeState.currentCategory === 'math' 
-                          ? mathProblems[dailyChallengeState.currentQuestionIndex].question
-                          : dailyChallengeState.currentCategory === 'writing'
-                            ? writingProblems[dailyChallengeState.currentQuestionIndex].sentence
-                            : smartyPantsProblems[dailyChallengeState.currentQuestionIndex].question
-                        }
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      {(dailyChallengeState.currentCategory === 'math' 
-                        ? mathProblems[dailyChallengeState.currentQuestionIndex].options
-                        : dailyChallengeState.currentCategory === 'writing'
-                          ? writingProblems[dailyChallengeState.currentQuestionIndex].options
-                          : smartyPantsProblems[dailyChallengeState.currentQuestionIndex].options
-                      ).map((option, index) => (
-                        <AnswerButton
-                          key={index}
-                          option={option}
-                          index={index}
-                          isCorrect={index === (dailyChallengeState.currentCategory === 'math'
-                            ? mathProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                            : dailyChallengeState.currentCategory === 'writing'
-                              ? writingProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                              : smartyPantsProblems[dailyChallengeState.currentQuestionIndex].correctIndex)}
-                          onClick={(idx) => {
-                            const correct = idx === (dailyChallengeState.currentCategory === 'math'
-                              ? mathProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                              : dailyChallengeState.currentCategory === 'writing'
-                                ? writingProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                                : smartyPantsProblems[dailyChallengeState.currentQuestionIndex].correctIndex);
-                            
-                            setIsCorrect(correct);
-                            setShowFeedback(true);
-                            playSound(correct ? 'correct' : 'incorrect', 0.1);
-                            
-                            setTimeout(() => {
-                              setShowFeedback(false);
-                              setDailyChallengeState(prev => {
-                                const newProgress = {
-                                  ...prev.progress,
-                                  [prev.currentCategory]: prev.progress[prev.currentCategory] + 1
-                                };
-                                
-                                const newCorrectAnswers = {
-                                  ...prev.correctAnswers,
-                                  [prev.currentCategory]: correct 
-                                    ? prev.correctAnswers[prev.currentCategory] + 1 
-                                    : prev.correctAnswers[prev.currentCategory]
-                                };
-                                
-                                const newPoints = prev.points + (correct ? 10 : 0);
-                                
-                                if (prev.currentCategory === 'math' && newProgress.math >= 3) {
-                                  return {
-                                    ...prev,
-                                    currentCategory: 'writing',
-                                    currentQuestionIndex: 0,
-                                    progress: newProgress,
-                                    correctAnswers: newCorrectAnswers,
-                                    points: newPoints
-                                  };
-                                } else if (prev.currentCategory === 'writing' && newProgress.writing >= 3) {
-                                  return {
-                                    ...prev,
-                                    currentCategory: 'smartypants',
-                                    currentQuestionIndex: 0,
-                                    progress: newProgress,
-                                    correctAnswers: newCorrectAnswers,
-                                    points: newPoints
-                                  };
-                                } else if (newProgress.math >= 3 && newProgress.writing >= 3 && newProgress.smartypants >= 3) {
-                                  return {
-                                    ...prev,
-                                    isActive: false,
-                                    points: newPoints
-                                  };
-                                }
-                                
-                                return {
-                                  ...prev,
-                                  currentQuestionIndex: prev.currentQuestionIndex + 1,
-                                  progress: newProgress,
-                                  correctAnswers: newCorrectAnswers,
-                                  points: newPoints
-                                };
-                              });
-                            }, 1500);
-                          }}
-                          revealed={showFeedback && (index === (dailyChallengeState.currentCategory === 'math'
-                            ? mathProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                            : dailyChallengeState.currentCategory === 'writing'
-                              ? writingProblems[dailyChallengeState.currentQuestionIndex].correctIndex
-                              : smartyPantsProblems[dailyChallengeState.currentQuestionIndex].correctIndex))}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            </CardContent>
-          </Card>
-
-          {!dailyChallengeState.isActive && dailyChallengeState.points > 0 && (
-            <GameOver
-              points={dailyChallengeState.points}
-              streak={userProgress.streak + 1}
-              onClose={() => {
-                setUserProgress(prev => ({
-                  ...prev,
-                  points: prev.points + dailyChallengeState.points,
-                  streak: prev.streak + 1,
-                  dailyChallenge: {
-                    ...prev.dailyChallenge,
-                    completed: true,
-                    score: dailyChallengeState.points
-                  }
-                }));
-                handleSectionChange('home');
-              }}
-            />
-          )}
-
-          <div className="mb-6">
-            <div className="flex justify-between text-sm text-gray-400 mb-2">
-              <span>Daily Progress</span>
-              <span>{Math.round((dailyChallengeState.progress.math + dailyChallengeState.progress.writing + dailyChallengeState.progress.smartypants) / 9 * 100)}%</span>
-            </div>
-            <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-500"
-                style={{ 
-                  width: `${(dailyChallengeState.progress.math + dailyChallengeState.progress.writing + dailyChallengeState.progress.smartypants) / 9 * 100}%` 
-                }}
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-2 mt-4">
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-400">Math</div>
-                <div className="text-lg font-bold text-blue-400">{dailyChallengeState.progress.math}/3</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-400">Writing</div>
-                <div className="text-lg font-bold text-purple-400">{dailyChallengeState.progress.writing}/3</div>
-              </div>
-              <div className="text-center">
-                <div className="text-sm font-medium text-gray-400">Smarty Pants</div>
-                <div className="text-lg font-bold text-emerald-400">{dailyChallengeState.progress.smartypants}/3</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center mb-4">
-            <div className={cn(
-              "px-4 py-2 rounded-full font-mono text-lg",
-              dailyChallengeState.timeLeft < 60 ? "bg-red-500/20 text-red-400" : "bg-gray-700 text-gray-300"
-            )}>
-              {Math.floor(dailyChallengeState.timeLeft / 60)}:{(dailyChallengeState.timeLeft % 60).toString().padStart(2, '0')}
-            </div>
-          </div>
-
-          <div className="text-center mb-4">
-            <div className="text-sm text-gray-400">Bonus Points Available</div>
-            <div className="text-2xl font-bold text-yellow-400">
-              +{Math.floor(dailyChallengeState.timeLeft / 30) * 5}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="px-4 py-2 bg-gray-700 rounded-full">
-              <span className="text-orange-400 font-bold">{dailyChallengeState.streak}×</span>
-              <span className="text-gray-400 text-sm ml-1">Streak</span>
-            </div>
-            {dailyChallengeState.streak > 0 && (
-              <div className="text-sm text-gray-400">
-                Next answer worth {10 * Math.min(dailyChallengeState.streak + 1, 5)} points
-              </div>
-            )}
-          </div>
-        </div>
-      )
-    },
-    smartypants: {
-      title: "Smarty Pants",
-      icon: <Brain className="w-6 h-6" />,
-      content: (
-        <div className="space-y-6">
-          <div className="flex items-center space-x-4">
-            <Brain className="w-8 h-8 text-blue-400" />
-            <div>
-              <h2 className="text-2xl font-bold text-gray-100">Smarty Pants</h2>
-              <p className="text-gray-400">Test your general knowledge</p>
-            </div>
-          </div>
-          
-          <Card className="bg-gray-800 border-0">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {smartyPantsProblems && smartyPantsProblems[currentProblem] && (
-                  <>
-                    <AnimatePresence mode="wait">
-                      <motion.div
-                        key={currentProblem}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <p className="text-2xl text-gray-100 p-6 rounded-lg bg-gray-700">
-                          {smartyPantsProblems[currentProblem].question}
-                        </p>
-                      </motion.div>
-                    </AnimatePresence>
-                    <div className="space-y-3">
-                      {smartyPantsProblems[currentProblem].options.map((option, index) => (
-                        <AnswerButton
-                          key={index}
-                          option={option}
-                          index={index}
-                          isCorrect={index === smartyPantsProblems[currentProblem].correctIndex}
-                          onClick={(idx) => handleAnswer(currentProblem, idx, 'smartypants')}
-                          revealed={showFeedback && index === smartyPantsProblems[currentProblem].correctIndex}
-                        />
-                      ))}
-                    </div>
-                    {showFeedback && (
-                      <Alert className={isCorrect ? "bg-green-500/20" : "bg-red-500/20"}>
-                        {isCorrect ? (
-                          <>
-                            <span className="text-white">
-                              Correct! +{10 + Math.floor(userProgress.streak / 3) * 5} points
-                            </span>
-                            <br />
-                            <span className="text-sm opacity-90">
-                              {smartyPantsProblems[currentProblem].explanation}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="text-white">Try again!</span>
-                        )}
-                      </Alert>
-                    )}
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-          {/* Add this right after the Brain icon and title section */}
-          <div className="flex items-center justify-end">
-            <span className="text-sm text-gray-400">
-              Question {currentProblem + 1} of {smartyPantsProblems.length}
-            </span>
-          </div>
-        </div>
-      )
+  const nextQuestion = () => {
+    const nextNum = questionNumber + 1;
+    if (nextNum >= gameQuestions.length) {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      setShowGameOver(true);
+      setShowDailyChallenge(false);
+    } else {
+      setQuestionNumber(nextNum);
+      setCurrentQuestion(gameQuestions[nextNum]);
+      setAnswered(false);
     }
   };
 
+  function shuffleArray<T>(array: T[]): T[] {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  }
+
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 p-4">
-      {/* Show celebrations at certain points */}
-      {dailyChallengeState.streak === 5 && (
-        <Celebration message="5× Streak! Maximum Multiplier!" />
-      )}
-      {dailyChallengeState.points >= 100 && (
-        <Celebration message="100 Points! You're On Fire! 🔥" />
-      )}
+    <div className="min-h-screen relative bg-gradient-to-b from-black to-gray-900">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 z-0 opacity-30"
+        style={{
+          backgroundImage: 'url("/bg.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
+      {/* Logo */}
+      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
+        <img 
+          src="/WIZ KID.png" 
+          alt="WIZ KID Logo" 
+          className="w-48 h-auto"
+        />
+      </div>
 
-      <div className="max-w-6xl mx-auto">
-        {/* Top Navigation - Only shows when not on home page */}
-        {activeSection !== 'home' && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between bg-gray-800 rounded-lg p-2">
-              <button 
-                onClick={() => handleSectionChange('home')}
-                className="p-2 hover:bg-gray-700 rounded-lg transition-colors flex items-center space-x-2 text-gray-300 hover:text-gray-100"
-              >
-                <Home className="w-5 h-5" />
-                <span>Dashboard</span>
-              </button>
-              
-              <div className="flex items-center space-x-1">
-                {[
-                  { key: 'vocabulary', title: 'Vocabulary', icon: <GraduationCap className="w-5 h-5" /> },
-                  { key: 'math', title: 'Math', icon: <Calculator className="w-5 h-5" /> },
-                  { key: 'comprehension', title: 'Reading', icon: <BookOpen className="w-5 h-5" /> },
-                  { key: 'writing', title: 'Writing', icon: <Pen className="w-5 h-5" /> }
-                ].map(({ key, title, icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => handleSectionChange(key)}
-                    className={cn(
-                      "p-2 rounded-lg transition-colors",
-                      activeSection === key 
-                        ? "bg-gray-700 text-blue-400" 
-                        : "hover:bg-gray-700 text-gray-400 hover:text-gray-200"
-                    )}
-                    title={title}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+      {/* Main Content - added pt-32 to create space below logo */}
+      <div className="container mx-auto px-4 py-8 pt-32 relative z-10">
+        <div className="space-y-8">
+          {/* Stats and Categories Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+
+{/* Daily Challenge Card */}
+<Card className="relative overflow-hidden bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl lg:col-span-3">
+  {/* Background Pattern */}
+  <div 
+    className="absolute inset-0 opacity-[0.03]" 
+    style={{ 
+      backgroundImage: `repeating-linear-gradient(
+        45deg,
+        #ffffff,
+        #ffffff 1px,
+        transparent 1px,
+        transparent 10px
+      )`
+    }}
+  />
+  
+        <CardContent className="p-6 relative">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/wizquizLogo.png" 
+                alt="WizQuiz Challenge" 
+                className="h-16"
+              />
             </div>
+            <button
+              onClick={startDailyChallenge}
+              className="px-6 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 backdrop-blur-sm border border-emerald-500/50 rounded-lg font-semibold transition-all hover:scale-105 text-emerald-400 flex items-center space-x-2"
+            >
+              <Zap className="w-5 h-5" />
+              <span>Start Challenge</span>
+            </button>
           </div>
-        )}
-
-        {/* Title section - Only show on home page */}
-        {activeSection === 'home' && (
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 text-transparent bg-clip-text">
-              Brain Train
-            </h1>
-            <p className="text-gray-300">Test Prep for Your Middle School Child</p>
-          </div>
-        )}
-
-        {activeSection === 'home' ? (
-          <div className="space-y-8">
-            {/* Stats Section */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Star className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-yellow-400">
-                    {userProgress.points}
+        </CardContent>
+      </Card>
+            {/* Combined Stats Card */}
+            <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl lg:col-span-2">
+              <CardContent className="p-6">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="text-center">
+                    <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-yellow-400">
+                      {userProgress.points}
+                    </div>
+                    <div className="text-xs text-gray-300">Points</div>
                   </div>
-                  <div className="text-sm text-gray-300">Points</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Zap className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-orange-400">{userProgress.streak}</div>
-                  <div className="text-sm text-gray-300">Streak</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-0">
-                <CardContent className="p-6 text-center">
-                  <Trophy className="w-8 h-8 text-purple-500 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-purple-400">
-                    {Math.floor(userProgress.points / 100)}
+                  <div className="text-center">
+                    <Zap className="w-6 h-6 text-orange-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-orange-400">
+                      {userProgress.streak}
+                    </div>
+                    <div className="text-xs text-gray-300">Streak</div>
                   </div>
-                  <div className="text-sm text-gray-300">Level</div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Daily Challenge Section - Made Larger */}
-            <Card className="bg-gray-800 border-0">
-              <CardContent className="p-8">
-                <div className="flex items-center space-x-3 mb-6">
-                  <Calendar className="w-10 h-10 text-blue-400" />
-                  <h2 className="text-2xl font-bold text-gray-100">Daily Challenge</h2>
-                </div>
-                <div className="text-center py-8">
-                  <h3 className="text-2xl font-bold mb-4 text-emerald-400">Today's Challenge</h3>
-                  <p className="text-gray-300 mb-8 text-lg">Complete 3 questions from each category</p>
-                  <button
-                    onClick={startDailyChallenge}
-                    className="w-full max-w-md px-8 py-4 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-lg transition-colors"
-                  >
-                    Start Challenge
-                  </button>
+                  <div className="text-center">
+                    <Trophy className="w-6 h-6 text-purple-500 mx-auto mb-2" />
+                    <div className="text-2xl font-bold text-purple-400">
+                      {Math.floor(userProgress.points / 100)}
+                    </div>
+                    <div className="text-xs text-gray-300">Level</div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Quick Start / Focused Practice Section */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-100 mb-4">Focused Practice</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {[
-                  { key: 'vocabulary', title: 'Vocabulary', icon: <GraduationCap className="w-6 h-6" /> },
-                  { key: 'math', title: 'Math', icon: <Calculator className="w-6 h-6" /> },
-                  { key: 'comprehension', title: 'Reading', icon: <BookOpen className="w-6 h-6" /> },
-                  { key: 'writing', title: 'Writing', icon: <Pen className="w-6 h-6" /> },
-                  { key: 'smartypants', title: 'Smarty Pants', icon: <Lightbulb className="w-6 h-6" /> }
-                ].map(({ key, title, icon }) => (
-                  <button
-                    key={key}
-                    onClick={() => handleSectionChange(key)}
-                    className="p-6 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors text-center group"
-                  >
-                    <div className="flex flex-col items-center space-y-2">
-                      <div className="p-3 rounded-full bg-gray-700 group-hover:bg-gray-600 transition-colors">
-                        {icon}
-                      </div>
-                      <span className="font-medium">{title}</span>
+           
+
+ 
+          </div>
+
+          {/* Quick Start / Focused Practice Section */}
+          <div>
+            <h2 className="text-xl font-bold text-gray-100 mb-4">Focused Practice</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+              {[
+                { key: 'vocabulary', title: 'Vocabulary', icon: <GraduationCap className="w-6 h-6" /> },
+                { key: 'math', title: 'Math', icon: <Calculator className="w-6 h-6" /> },
+                { key: 'comprehension', title: 'Reading', icon: <BookOpen className="w-6 h-6" /> },
+                { key: 'writing', title: 'Writing', icon: <Pen className="w-6 h-6" /> },
+                { key: 'smartypants', title: 'Smarty Pants', icon: <Lightbulb className="w-6 h-6" /> }
+              ].map(({ key, title, icon }) => (
+                <button
+                  key={key}
+                  onClick={() => handleSectionChange(key)}
+                  className="p-6 rounded-lg bg-black/20 backdrop-blur-lg border border-white/10 hover:bg-white/5 transition-all hover:scale-105 text-center group"
+                >
+                  <div className="flex flex-col items-center space-y-2">
+                    <div className="p-3 rounded-full bg-black/30 group-hover:bg-black/40 transition-colors">
+                      {icon}
                     </div>
+                    <span className="font-medium text-gray-200">{title}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Daily Challenge Modal */}
+      {showDailyChallenge && currentQuestion && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+          {/* Logo above modal */}
+          <div className="mb-6">
+            <img 
+              src="/WIZ KID.png" 
+              alt="WIZ KID Logo" 
+              className="w-64 h-auto"
+            />
+          </div>
+
+          {/* Question Modal */}
+          <div className="bg-gray-800 rounded-xl max-w-2xl w-full p-8">
+            <div className="space-y-6">
+              {/* Progress, Score, and Timer Row */}
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-emerald-400 font-semibold">
+                  Question {questionNumber + 1} of 9
+                </div>
+                <div className="text-yellow-400 font-semibold">
+                  Score: {score}
+                </div>
+                <div className={cn(
+                  "font-mono text-2xl font-bold",
+                  timeLeft <= 10 
+                    ? "text-red-500" 
+                    : timeLeft <= 30 
+                      ? "text-yellow-400" 
+                      : "text-blue-400"
+                )}>
+                  {formatTime(timeLeft)}
+                </div>
+              </div>
+
+              <h2 className="text-2xl font-bold text-white">{currentQuestion.question}</h2>
+              {currentQuestion.context && (
+                <p className="text-gray-300 italic">{currentQuestion.context}</p>
+              )}
+              <div className="space-y-4">
+                {currentQuestion.options.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleAnswer(index)}
+                    disabled={answered}
+                    className={cn(
+                      "w-full p-4 rounded-lg text-left transition-colors",
+                      answered
+                        ? index === currentQuestion.correctIndex
+                          ? "bg-green-500/20 text-green-200"
+                          : "bg-gray-700 text-gray-400"
+                        : "bg-gray-700 hover:bg-gray-600 text-gray-200"
+                    )}
+                  >
+                    {option}
                   </button>
                 ))}
               </div>
+              {answered && (
+                <div className="mt-4">
+                  <p className="text-gray-300">{currentQuestion.explanation}</p>
+                  <button
+                    onClick={nextQuestion}
+                    className="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold"
+                  >
+                    {questionNumber === gameQuestions.length - 1 ? 'Finish' : 'Next Question'}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div>
-            {sections[activeSection].content}
+        </div>
+      )}
+
+      {/* Game Over Modal */}
+      {showGameOver && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-800 rounded-xl max-w-lg w-full p-8">
+            <div className="text-center space-y-6">
+              <h2 className="text-4xl font-bold text-emerald-400">
+                {timeLeft === 0 ? "Time's Up! ⏰" : "Challenge Complete! 🎉"}
+              </h2>
+              <div className="py-8">
+                <div className="text-5xl font-bold text-yellow-400 mb-2">
+                  {score}
+                </div>
+                <div className="text-gray-400">Points Earned</div>
+                {timeLeft > 0 && (
+                  <div className="text-blue-400 mt-2">
+                    Completed with {formatTime(timeLeft)} remaining!
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setShowGameOver(false)}
+                className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-lg transition-colors"
+              >
+                Back to Dashboard
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default SATPrep;
+
+// Add these back near the top of the file, after the interfaces
+const mathProblems = [
+  {
+    question: "What is 25% of 80?",
+    options: ["15", "20", "25", "30"],
+    correctIndex: 1,
+    explanation: "To find 25% of 80, multiply 80 by 0.25 or divide by 4: 80 × 0.25 = 20"
+  },
+  {
+    question: "Solve: 2x + 5 = 13",
+    options: ["x = 3", "x = 4", "x = 5", "x = 6"],
+    correctIndex: 1,
+    explanation: "To solve, subtract 5 from both sides: 2x = 8, then divide by 2: x = 4"
+  },
+  {
+    question: "What is -8 + (-3)?",
+    options: ["-11", "-5", "5", "11"],
+    correctIndex: 0,
+    explanation: "When adding two negative numbers, add their absolute values and keep the negative sign: |-8| + |-3| = 8 + 3 = 11, so -8 + (-3) = -11"
+  },
+  {
+    question: "Simplify: (3 × 4) + (2 × 5)",
+    options: ["22", "24", "26", "28"],
+    correctIndex: 0,
+    explanation: "(3 × 4) + (2 × 5) = 12 + 10 = 22"
+  },
+  {
+    question: "What is the square root of 144?",
+    options: ["10", "11", "12", "13"],
+    correctIndex: 2,
+    explanation: "12 × 12 = 144, so √144 = 12"
+  }
+];
+
+const writingProblems = [
+  {
+    question: "Choose the correct form of the verb:",
+    context: "Yesterday, she _____ to the store.",
+    options: ["go", "goes", "went", "going"],
+    correctIndex: 2,
+    explanation: "In past tense, the irregular verb 'go' becomes 'went'"
+  },
+  {
+    question: "Which sentence uses correct punctuation?",
+    options: [
+      "The cat slept on the windowsill, it was sunny.",
+      "The cat slept on the windowsill; it was sunny.",
+      "The cat slept on the windowsill it was sunny.",
+      "The cat slept on the windowsill... it was sunny."
+    ],
+    correctIndex: 1,
+    explanation: "A semicolon correctly joins two related independent clauses."
+  },
+  {
+    question: "Choose the sentence with correct subject-verb agreement:",
+    options: [
+      "The group of students were talking loudly.",
+      "The group of students was talking loudly.",
+      "The group of students is talking loudly.",
+      "The group of students be talking loudly."
+    ],
+    correctIndex: 1,
+    explanation: "'Group' is a singular collective noun, so it takes the singular verb 'was'."
+  },
+  {
+    question: "Which word correctly completes this sentence? 'The cake smells _____ good!'",
+    options: [
+      "real",
+      "really",
+      "very much",
+      "much more"
+    ],
+    correctIndex: 1,
+    explanation: "We need an adverb (really) to modify the adjective 'good'."
+  },
+  {
+    question: "Identify the sentence with correct pronoun usage:",
+    options: [
+      "Me and Tom went to the movie.",
+      "Tom and me went to the movie.",
+      "Tom and I went to the movie.",
+      "Tom and myself went to the movie."
+    ],
+    correctIndex: 2,
+    explanation: "Use 'I' as part of the subject of a sentence. Also, put the other person's name first."
+  },
+  {
+    question: "Which sentence uses commas correctly?",
+    options: [
+      "I packed sandwiches chips, cookies and juice for lunch.",
+      "I packed sandwiches, chips cookies, and juice for lunch.",
+      "I packed, sandwiches, chips, cookies, and juice for lunch.",
+      "I packed sandwiches, chips, cookies, and juice for lunch."
+    ],
+    correctIndex: 3,
+    explanation: "In a list of items, use commas between each item and include the Oxford comma before 'and'."
+  },
+  {
+    question: "Choose the correct homophone: 'The dog wagged ___ tail.'",
+    options: [
+      "its",
+      "it's",
+      "its'",
+      "its's"
+    ],
+    correctIndex: 0,
+    explanation: "'Its' is the possessive form, while 'it's' is a contraction of 'it is'."
+  }
+];
+
+const smartyPantsProblems = [
+  {
+    question: "Which of these inventions came first?",
+    options: [
+      "Television",
+      "Telephone",
+      "Internet",
+      "Radio"
+    ],
+    correctIndex: 1,
+    explanation: "The telephone was invented by Alexander Graham Bell in 1876, before the radio (1895), television (1920s), and internet (1960s)."
+  },
+  {
+    question: "If a train travels 60 miles per hour, how far will it travel in 2.5 hours?",
+    options: [
+      "120 miles",
+      "150 miles",
+      "180 miles",
+      "200 miles"
+    ],
+    correctIndex: 1,
+    explanation: "Multiply speed (60) by time (2.5): 60 × 2.5 = 150 miles"
+  },
+  {
+    question: "Which continent has the most countries?",
+    options: [
+      "Asia",
+      "Africa",
+      "Europe",
+      "South America"
+    ],
+    correctIndex: 1,
+    explanation: "Africa has 54 countries, more than any other continent."
+  },
+  {
+    question: "What causes a rainbow to appear?",
+    options: [
+      "Heat from the sun",
+      "Clouds moving together",
+      "Light reflecting off water droplets",
+      "Wind patterns"
+    ],
+    correctIndex: 2,
+    explanation: "Rainbows appear when sunlight reflects and refracts (bends) through water droplets in the air."
+  },
+  {
+    question: "Which of these animals is NOT a mammal?",
+    options: [
+      "Dolphin",
+      "Bat",
+      "Salamander",
+      "Kangaroo"
+    ],
+    correctIndex: 2,
+    explanation: "A salamander is an amphibian, while all the others are mammals that give birth to live young and produce milk."
+  },
+  {
+    question: "What was the main purpose of the Great Wall of China?",
+    options: [
+      "To create a trade route",
+      "To protect against invasions",
+      "To store water",
+      "To display wealth"
+    ],
+    correctIndex: 1,
+    explanation: "The Great Wall was built primarily as a defensive fortification to protect Chinese states from nomadic invasions."
+  },
+  {
+    question: "If you face east and turn clockwise 270 degrees, which direction are you facing?",
+    options: [
+      "North",
+      "South",
+      "East",
+      "West"
+    ],
+    correctIndex: 0,
+    explanation: "Starting east, turning clockwise 270° means: east → south (90°) → west (180°) → north (270°)"
+  },
+  {
+    question: "Which of these is a renewable resource?",
+    options: [
+      "Coal",
+      "Natural gas",
+      "Solar energy",
+      "Oil"
+    ],
+    correctIndex: 2,
+    explanation: "Solar energy is renewable because it naturally replenishes daily, unlike fossil fuels like coal, oil, and natural gas."
+  },
+  {
+    question: "What makes sound travel faster?",
+    options: [
+      "Colder temperature",
+      "Higher altitude",
+      "Denser material",
+      "Larger space"
+    ],
+    correctIndex: 2,
+    explanation: "Sound travels faster through denser materials because the molecules are closer together and can transfer vibrations more quickly."
+  },
+  {
+    question: "During the American Revolution, which country helped the colonies fight Britain?",
+    options: [
+      "Spain",
+      "France",
+      "Germany",
+      "Italy"
+    ],
+    correctIndex: 1,
+    explanation: "France was a key ally during the American Revolution, providing military and financial support."
+  },
+  {
+    question: "What's the difference between weather and climate?",
+    options: [
+      "They're the same thing",
+      "Weather is short-term, climate is long-term",
+      "Weather is only about rain",
+      "Climate is only about temperature"
+    ],
+    correctIndex: 1,
+    explanation: "Weather describes day-to-day conditions, while climate describes average conditions over many years."
+  },
+  {
+    question: "Which ancient civilization built the pyramids of Giza?",
+    options: [
+      "The Romans",
+      "The Greeks",
+      "The Egyptians",
+      "The Mayans"
+    ],
+    correctIndex: 2,
+    explanation: "The ancient Egyptians built the pyramids of Giza around 2500 BCE as tombs for their pharaohs."
+  }
+];
+
+const userProgress = {
+  points: 0,
+  streak: 0,
+  lastPlayed: '',
+  dailyChallenge: {
+    completed: false,
+    score: 0,
+    timeRemaining: 0,
+    currentCategory: 'math',
+    correctAnswers: {
+      math: 0,
+      writing: 0,
+      smartypants: 0
+    }
+  }
+};
 
  
