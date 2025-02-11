@@ -15,7 +15,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
-import { startOfDay } from '@/lib/date-fns';
+import { startOfDay } from 'date-fns';
 import { useGame } from '../context/GameContext';
 import { useQuestions } from '../context/QuestionsContext';
 import { 
