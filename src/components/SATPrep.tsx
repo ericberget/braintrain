@@ -25,6 +25,7 @@ import {
   vocabWords, 
   readingPassages 
 } from '../data/questions';
+import WordOfTheDay from './WordOfTheDay';
 
 const playSound = (soundName: 'correct' | 'incorrect' | 'tick' | 'timeWarning' | 'timeUp', volume: number = 0.2) => {
   const soundMap = {
@@ -379,6 +380,79 @@ const PointsAnimation = ({ points }: { points: number }) => {
   );
 };
 
+// Add this component near the top with other components
+const QuestionTransition = ({ children, key }: { children: React.ReactNode; key: string | number }) => {
+  return (
+    <motion.div
+      key={key}
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.3 }}
+    >
+      {children}
+    </motion.div>
+  );
+};
+
+// Add this component near the top with other components
+const FeedbackAnimation = ({ isCorrect, children }: { isCorrect: boolean; children: React.ReactNode }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className={`p-4 rounded-lg ${
+        isCorrect ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
+      }`}
+    >
+      <motion.div
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.2, delay: 0.1 }}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Add this component for the celebration animation
+const Confetti = () => {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 pointer-events-none"
+    >
+      {[...Array(50)].map((_, i) => (
+        <motion.div
+          key={i}
+          initial={{
+            opacity: 0,
+            y: -10,
+            x: Math.random() * window.innerWidth
+          }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            y: window.innerHeight + 10,
+            x: Math.random() * window.innerWidth + (Math.random() - 0.5) * 200
+          }}
+          transition={{
+            duration: 2.5,
+            delay: Math.random() * 0.2
+          }}
+          className="absolute w-3 h-3 rounded-full"
+          style={{
+            background: ['#FFD700', '#FF69B4', '#00FF00', '#00BFFF'][Math.floor(Math.random() * 4)]
+          }}
+        />
+      ))}
+    </motion.div>
+  );
+};
+
 const SATPrep = () => {
   const { state, dispatch } = useGame();
   const { 
@@ -388,6 +462,7 @@ const SATPrep = () => {
     currentQuestion,
     questionNumber,
     answered,
+    isCorrect,
     nextQuestion,
     handleAnswer
   } = useQuestions();
@@ -461,7 +536,12 @@ const SATPrep = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Add these state variables for reading feedback
+  const [readingAnswered, setReadingAnswered] = useState(false);
+  const [isCorrectReading, setIsCorrectReading] = useState(false);
 
+  // Add state for Word of the Day modal
+  const [showWordOfTheDay, setShowWordOfTheDay] = useState(false);
 
   if (isLoading) {
     return (
@@ -604,14 +684,46 @@ const SATPrep = () => {
   };
 
   const handleReadingAnswer = (index: number) => {
+    if (!readingAnswered) {
     const currentPassage = readingPassages[currentPassageIndex];
     const currentQuestion = currentPassage.questions[currentReadingQuestionIndex];
+      const isCorrect = index === currentQuestion.correctIndex;
+      
+      setIsCorrectReading(isCorrect);
+      setReadingAnswered(true);
+      
+      // Award points for correct answers
+      if (isCorrect) {
+        addPoints(10);
+        playSound('correct');
+      } else {
+        playSound('incorrect');
+      }
+    }
+  };
+
+  // Add a function to handle next reading question
+  const handleNextReadingQuestion = () => {
+    const currentPassage = readingPassages[currentPassageIndex];
     
     if (currentReadingQuestionIndex < currentPassage.questions.length - 1) {
+      // Move to next question in current passage
       setCurrentReadingQuestionIndex(prev => prev + 1);
+      setReadingAnswered(false);
+      setIsCorrectReading(false);
     } else if (currentPassageIndex < readingPassages.length - 1) {
+      // Move to next passage
       setCurrentPassageIndex(prev => prev + 1);
       setCurrentReadingQuestionIndex(0);
+      setReadingAnswered(false);
+      setIsCorrectReading(false);
+    } else {
+      // End of all passages
+      setIsReadingModalOpen(false);
+      setCurrentPassageIndex(0);
+      setCurrentReadingQuestionIndex(0);
+      setReadingAnswered(false);
+      setIsCorrectReading(false);
     }
   };
 
@@ -631,7 +743,7 @@ const SATPrep = () => {
       const isCorrect = selectedIndex === currentMathQuestions[currentMathIndex].correctIndex;
       setIsCorrectMath(isCorrect);
       setMathAnswered(true);
-      
+
       // Award points for correct answers
       if (isCorrect) {
         addPoints(10); // Award 10 points for each correct answer
@@ -671,7 +783,7 @@ const SATPrep = () => {
       const isCorrect = selectedIndex === currentSmartyPantsQuestions[currentSmartyPantsIndex].correctIndex;
       setIsCorrectSmartyPants(isCorrect);
       setSmartyPantsAnswered(true);
-      
+
       // Award points for correct answers
       if (isCorrect) {
         addPoints(15); // Award 15 points for Smarty Pants (they're harder!)
@@ -851,27 +963,45 @@ const SATPrep = () => {
       {/* Main Content - added pt-32 to create space below logo */}
       <div className="container mx-auto px-4 py-8 pt-32 relative z-10">
         <div className="space-y-8">
-         
+
 
           {/* Stats and Categories Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 {/* Daily Challenge Card */}
-<Card className="relative overflow-hidden bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl lg:col-span-3">
-  {/* Background Pattern */}
-  <div 
-    className="absolute inset-0 opacity-[0.03]" 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="lg:col-span-2"
+            >
+              <Card className="relative overflow-hidden bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl">
+                {/* Background Pattern with subtle animation */}
+                <motion.div 
+                  className="absolute inset-0 opacity-[0.08]"
+                  animate={{ 
+                    backgroundPosition: ["0% 0%", "100% 100%"],
+                  }}
+                  transition={{ 
+                    duration: 20, 
+                    ease: "linear", 
+                    repeat: Infinity 
+                  }}
     style={{ 
       backgroundImage: `repeating-linear-gradient(
         45deg,
         #ffffff,
-        #ffffff 1px,
-        transparent 1px,
-        transparent 10px
+                      #ffffff 2px,
+                      transparent 2px,
+                      transparent 12px
       )`
     }}
   />
   
+                {/* Content with hover animation */}
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                >
         <CardContent className="p-6 relative">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -880,64 +1010,79 @@ const SATPrep = () => {
                 alt="WizQuiz Challenge" 
                 className="h-16"
               />
-              {state.dailyProgress.completed && (
-                <div className="flex items-center space-x-2 text-emerald-400">
-                  <Star className="w-4 h-4" />
-                  <span className="text-sm">Best Score: {state.dailyProgress.bestScore}</span>
-                </div>
-              )}
+                        {state.dailyProgress.completed && (
+                          <div className="flex items-center space-x-2 text-emerald-400">
+                            <Star className="w-4 h-4" />
+                            <span className="text-sm">Best Score: {state.dailyProgress.bestScore}</span>
+                          </div>
+                        )}
             </div>
             <button
               onClick={startDailyChallenge}
-              className={cn(
-                "px-6 py-2 backdrop-blur-sm border rounded-lg font-semibold transition-all hover:scale-105 flex items-center space-x-2",
-                state.dailyProgress.completed 
-                  ? "bg-purple-500/20 hover:bg-purple-500/30 border-purple-500/50 text-purple-400"
-                  : "bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-400"
-              )}
-            >
-              {state.dailyProgress.completed ? (
-                <>
+                        className={cn(
+                          "px-6 py-2 backdrop-blur-sm border rounded-lg font-semibold transition-all hover:scale-105 flex items-center space-x-2",
+                          state.dailyProgress.completed 
+                            ? "bg-purple-500/20 hover:bg-purple-500/30 border-purple-500/50 text-purple-400"
+                            : "bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/50 text-emerald-400"
+                        )}
+                      >
+                        {state.dailyProgress.completed ? (
+                          <>
               <Zap className="w-5 h-5" />
-                  <span>Play Again</span>
-                </>
-              ) : (
-                <>
-                  <Star className="w-5 h-5" />
+                          <span>Play Again</span>
+                          </>
+                        ) : (
+                          <>
+                            <Star className="w-5 h-5" />
               <span>Start Challenge</span>
-                </>
-              )}
+                          </>
+                        )}
             </button>
           </div>
         </CardContent>
+                </motion.div>
       </Card>
-            {/* Combined Stats Card */}
-            <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl lg:col-span-2">
-              {/* Add Points Display Card */}
-              <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+            </motion.div>
+
+            {/* Points Card - simplified */}
+            <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl">
+              <div className="p-4">
                 <div className="flex items-center justify-center">
                   <div className="text-center">
-                    <div className="text-yellow-400 text-4xl font-bold mb-2">
+                    <div className="text-yellow-400 text-3xl font-bold mb-1">
                       {totalPoints}
                     </div>
-                    <div className="text-gray-400 text-sm">
+                    <div className="text-gray-400 text-xs">
                       Wiz Points
                     </div>
-                    
                   </div>
                 </div>
               </div>
             </Card>
 
-           
-
- 
+            {/* WizSpeller Card - simplified */}
+            <Card 
+              onClick={() => setShowWordOfTheDay(true)}
+              className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl cursor-pointer hover:bg-white/5 transition-colors"
+            >
+              <div className="p-4">
+                <div className="text-center space-y-1">
+                  <div className="text-purple-400 text-lg font-bold">WizSpeller</div>
+                  <div className="text-gray-400 text-sm">Word of the Day</div>
+                </div>
+              </div>
+            </Card>
           </div>
 
           {/* Quick Start / Focused Practice Section */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
             <h2 className="text-xl font-bold text-gray-100 mb-4">Focused Practice</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {/* Vocabulary Button */}
               <button
                 onClick={handleVocabButtonClick}
                 className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all hover:scale-105"
@@ -969,69 +1114,95 @@ const SATPrep = () => {
                 <Lightbulb className="w-6 h-6 mb-2 mx-auto text-yellow-400" />
                 <div className="text-sm font-medium text-gray-300">Smarty Pants</div>
               </button>
+
+              {/* Spelling Button (previously Word of the Day) */}
+              <button
+                onClick={() => setShowWordOfTheDay(true)}
+                className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all hover:scale-105"
+              >
+                <Pen className="w-6 h-6 mb-2 mx-auto text-purple-400" />
+                <div className="text-sm font-medium text-gray-300">Spelling</div>
+              </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* Daily Challenge Modal */}
       {showDailyChallenge && currentQuestion && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
-          {/* Question Modal */}
-          <div className="bg-gray-800 rounded-xl max-w-2xl w-full p-8">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-800 rounded-xl max-w-2xl w-full p-8"
+          >
             <div className="space-y-6">
               {/* Progress and Score Row */}
-              <div className="flex justify-between items-center mb-4">
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-between items-center mb-4"
+              >
                 <div className="text-emerald-400 font-semibold">
                   Question {questionNumber + 1} of 9
                 </div>
-                <div className="text-yellow-400 font-semibold">
+                <motion.div
+                  initial={{ scale: 1 }}
+                  animate={answered && isCorrect ? { scale: [1, 1.2, 1] } : {}}
+                  className="text-yellow-400 font-semibold"
+                >
                   Score: {state.gameSession.score}
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
 
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={questionNumber}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                >
               <h2 className="text-2xl font-bold text-white">{currentQuestion.question}</h2>
               {currentQuestion.context && (
-                <p className="text-gray-300 italic">{currentQuestion.context}</p>
+                    <p className="text-gray-300 italic mt-2">{currentQuestion.context}</p>
               )}
+                </motion.div>
+              </AnimatePresence>
+
               <div className="space-y-4">
-                {currentQuestion.options.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      if (handleAnswer) {
-                        handleAnswer(index);
-                        // Log the answer result
-                        const isCorrect = index === currentQuestion.correctIndex;
-                        console.log('Daily Challenge Answer:', { 
-                          isCorrect,
-                          currentScore: state.gameSession.score,
-                          totalPoints
-                        });
-                        
-                        if (isCorrect) {
-                          // Add points for correct answer
-                          const pointsToAdd = 10;
-                          dispatch({ 
-                            type: 'UPDATE_SCORE', 
-                            payload: state.gameSession.score + pointsToAdd 
-                          });
-                          console.log('Added points:', pointsToAdd);
-                        }
+                <motion.div 
+                  className="space-y-3"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: {
+                        staggerChildren: 0.1
                       }
-                    }}
-                    disabled={answered}
+                    }
+                  }}
+                >
+                {currentQuestion.options.map((option, index) => (
+                    <motion.button
+                    key={index}
+                      variants={{
+                        hidden: { opacity: 0, x: -20 },
+                        visible: { opacity: 1, x: 0 }
+                      }}
+                    onClick={() => handleAnswer(index)}
                     className={`w-full p-4 rounded-lg text-left transition-colors ${
                       answered
                         ? index === currentQuestion.correctIndex
                           ? 'bg-green-500/20 text-green-200'
-                          : 'bg-gray-700 text-gray-400'
-                        : 'bg-gray-700 hover:bg-gray-600 text-white'
+                            : 'bg-gray-700 text-gray-400'
+                          : 'bg-gray-700 hover:bg-gray-600 text-white'
                     }`}
                   >
                     {option}
-                  </button>
+                    </motion.button>
                 ))}
+                </motion.div>
               </div>
               {answered && (
                 <div className="mt-4">
@@ -1053,33 +1224,71 @@ const SATPrep = () => {
                 </div>
               )}
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
       {/* Game Over Modal */}
       {showGameOver && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-800 rounded-xl max-w-lg w-full p-8">
-            <div className="text-center space-y-6">
-              <h2 className="text-4xl font-bold text-emerald-400">
+          <Confetti />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="bg-gray-800 rounded-xl max-w-lg w-full p-8"
+          >
+            <motion.div 
+              className="text-center space-y-6"
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: {
+                  transition: {
+                    staggerChildren: 0.2
+                  }
+                }
+              }}
+            >
+              <motion.h2
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                className="text-4xl font-bold text-emerald-400"
+              >
                 Challenge Complete! 🎉
-              </h2>
-              <div className="py-8 space-y-4">
+              </motion.h2>
+
+              <motion.div
+                variants={{
+                  hidden: { opacity: 0, scale: 0.8 },
+                  visible: { opacity: 1, scale: 1 }
+                }}
+                className="py-8 space-y-4"
+              >
                 <div>
-                  <div className="text-5xl font-bold text-yellow-400 mb-2">
+                <div className="text-5xl font-bold text-yellow-400 mb-2">
                     +{state.gameSession.score}
-                  </div>
-                  <div className="text-gray-400">Points Earned</div>
                 </div>
+                  <div className="text-gray-400">Points Earned Today</div>
+                  </div>
                 <div>
                   <div className="text-3xl font-bold text-emerald-400">
                     {totalPoints + state.gameSession.score}
-                  </div>
-                  <div className="text-gray-400">Total Points</div>
-                </div>
               </div>
-              <button
+                  <div className="text-gray-400">Total WizQuiz Points</div>
+                </div>
+              </motion.div>
+
+              <motion.button
+                variants={{
+                  hidden: { opacity: 0, y: 20 },
+                  visible: { opacity: 1, y: 0 }
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   // Update points before closing
                   const newTotal = totalPoints + state.gameSession.score;
@@ -1099,86 +1308,130 @@ const SATPrep = () => {
                 className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-lg transition-colors"
               >
                 Back to Dashboard
-              </button>
-            </div>
-          </div>
+              </motion.button>
+            </motion.div>
+          </motion.div>
         </div>
       )}
 
       {/* Vocabulary Practice Modal */}
+      <AnimatePresence>
       {isVocabModalOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
-          <div className="relative bg-gray-800 rounded-xl max-w-4xl w-full p-8">
-            {/* Add close button */}
-            <button
-              onClick={() => setIsVocabModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              className="relative bg-gray-800 rounded-xl max-w-4xl w-full p-8"
             >
-              <X className="w-6 h-6" />
-            </button>
+              {/* Add close button */}
+              <button
+                onClick={() => setIsVocabModalOpen(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X className="w-6 h-6" />
+              </button>
 
-            <h2 className="text-2xl font-bold text-gray-400 mb-8">Vocabulary Practice</h2>
-            
-            {currentVocabQuestions.length > 0 ? (
+              <h2 className="text-2xl font-bold text-gray-400 mb-8">Vocabulary Practice</h2>
+              
+              {currentVocabQuestions.length > 0 ? (
               <div className="space-y-6">
                 <div className="text-sm text-gray-400">
-                 Question {currentQuestionIndex + 1} of {currentVocabQuestions.length}
+                   Question {currentQuestionIndex + 1} of {currentVocabQuestions.length}
                 </div>
                 
-                <h3 className="text-2xl text-white font-medium">
-                  What does <span className="text-emerald-400 font-bold">"{currentVocabQuestions[currentQuestionIndex].word}"</span> mean?
+                  <h3 className="text-2xl text-white font-bold">
+                    What does <span className="text-emerald-400 font-bold">"{currentVocabQuestions[currentQuestionIndex].word}"</span> mean?
                 </h3>
 
                 <div className="space-y-3">
-                  {currentVocabQuestions[currentQuestionIndex].options.map((option, index) => (
-                    <button
+                    <AnimatePresence mode="wait">
+                      <motion.div 
+                        key={`options-${currentQuestionIndex}`}
+                        className="space-y-3"
+                        initial="hidden"
+                        animate="visible"
+                        variants={{
+                          visible: {
+                            transition: {
+                              staggerChildren: 0.1
+                            }
+                          }
+                        }}
+                      >
+                        {currentVocabQuestions[currentQuestionIndex].options.map((option, index) => (
+                          <motion.button
                       key={index}
-                      onClick={() => handleVocabAnswer(option)}
-                      disabled={vocabAnswered}
+                            variants={{
+                              hidden: { opacity: 0, x: -20 },
+                              visible: { opacity: 1, x: 0 }
+                            }}
+                            onClick={() => handleVocabAnswer(option)}
+                            disabled={vocabAnswered}
                       className={`w-full p-4 text-left rounded-lg transition-colors ${
-                        vocabAnswered
-                          ? index === currentVocabQuestions[currentQuestionIndex].correctIndex
+                              vocabAnswered
+                                ? index === currentVocabQuestions[currentQuestionIndex].correctIndex
                             ? 'bg-green-500/20 text-green-200'
                             : 'bg-gray-700/50 text-gray-400'
                           : 'bg-gray-700/50 hover:bg-gray-700/80 text-white'
                       }`}
                     >
                       {option}
-                    </button>
+                          </motion.button>
                   ))}
+                      </motion.div>
+                    </AnimatePresence>
                 </div>
 
-                {vocabAnswered && (
-  <div className="mt-4 space-y-4">
-    <div className={`p-4 rounded-lg ${
-      isCorrectVocab ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
-    }`}>
-      <p className="text-smallfont-medium">
-        {isCorrectVocab ? 'Correct! 🎉' : 'Not quite right. 🤔'}
-      </p>
-      <div className="mt-4">
-        <p className="text-gray-400 text-sm">Example:</p>
-        <p className="mt-2 font-bold text-white text-2xl  ">
-          {currentVocabQuestions[currentQuestionIndex].example}
-        </p>
-      </div>
-    </div>
-    
-    <button
-      onClick={handleNextVocabQuestion}
-      className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
-    >
-      {currentQuestionIndex === currentVocabQuestions.length - 1 ? 'Finish Practice' : 'Next Question'}
-    </button>
-  </div>
-)}   
+                  {vocabAnswered && (
+                  <div className="mt-4 space-y-4">
+              <FeedbackAnimation isCorrect={isCorrectVocab}>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-4xl font-medium mb-4"
+                >
+                  {isCorrectVocab ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="mt-4"
+                >
+                  <p className="text-gray-400 text-sm">Example:</p>
+                  <p className="mt-2 font-bold text-white text-2xl">
+                    {currentVocabQuestions[currentQuestionIndex].example}
+                  </p>
+                </motion.div>
+              </FeedbackAnimation>
+              
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                onClick={handleNextVocabQuestion}
+                className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
+              >
+                {currentQuestionIndex === currentVocabQuestions.length - 1 ? 'Finish Practice' : 'Next Question'}
+              </motion.button>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="text-white">No vocabulary questions available.</div>
+              ) : (
+                <div className="text-white">No vocabulary questions available.</div>
             )}
-          </div>
-        </div>
+            </motion.div>
+          </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Reading Practice Modal */}
       {isReadingModalOpen && (
@@ -1198,33 +1451,103 @@ const SATPrep = () => {
               {/* Passage on the left */}
               <div className="space-y-4">
                 <div className="text-sm text-gray-400">
-                  Passage {currentPassageIndex + 1} of {readingPassages.length}
-                </div>
-                
+                Passage {currentPassageIndex + 1} of {readingPassages.length}
+              </div>
+              
                 <div className="bg-gray-700/50 p-6 rounded-lg h-[calc(90vh-12rem)] overflow-y-auto">
-                  <p className="text-white text-lg leading-relaxed">
-                    {readingPassages[currentPassageIndex].text}
-                  </p>
+                <p className="text-white text-lg leading-relaxed tracking-wide">
+                  {readingPassages[currentPassageIndex].text}
+                </p>
                 </div>
               </div>
 
               {/* Questions on the right */}
               <div className="space-y-6">
-                <h3 className="text-xl text-emerald-400 font-medium">
+                <AnimatePresence mode="wait">
+                  <QuestionTransition key={`${currentPassageIndex}-${currentReadingQuestionIndex}`}>
+                    <h3 className="text-xl text-emerald-400 font-bold">
                   {readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].question}
                 </h3>
+                  </QuestionTransition>
+                </AnimatePresence>
 
                 <div className="space-y-3">
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={`options-${currentPassageIndex}-${currentReadingQuestionIndex}`}
+                      className="space-y-3"
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        visible: {
+                          transition: {
+                            staggerChildren: 0.1
+                          }
+                        }
+                      }}
+                    >
                   {readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].options.map((option, index) => (
-                    <button
+                        <motion.button
                       key={index}
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
                       onClick={() => handleReadingAnswer(index)}
-                      className="w-full p-4 text-left rounded-lg bg-gray-700/50 hover:bg-gray-700/80 transition-colors text-white"
+                          disabled={readingAnswered}
+                          className={`w-full p-4 text-left rounded-lg transition-colors ${
+                            readingAnswered
+                              ? index === readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].correctIndex
+                                ? 'bg-green-500/20 text-green-200'
+                                : 'bg-gray-700/50 text-gray-400'
+                              : 'bg-gray-700/50 hover:bg-gray-700/80 text-white'
+                          }`}
                     >
                       {option}
-                    </button>
+                        </motion.button>
                   ))}
-                </div>
+                    </motion.div>
+                  </AnimatePresence>
+            </div>
+
+                {readingAnswered && (
+                  <div className="mt-4 space-y-4">
+                    <FeedbackAnimation isCorrect={isCorrectReading}>
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-4xl font-medium mb-4"
+                      >
+                        {isCorrectReading ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                      </motion.p>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-4"
+                      >
+                        <p className="text-blue-400 text-lg mb-2">Explanation:</p>
+                        <p className="text-lg">
+                          {readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].explanation}
+                        </p>
+                      </motion.div>
+                    </FeedbackAnimation>
+                    
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
+                      onClick={handleNextReadingQuestion}
+                      className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
+                    >
+                      {currentPassageIndex === readingPassages.length - 1 && 
+                       currentReadingQuestionIndex === readingPassages[currentPassageIndex].questions.length - 1 
+                        ? 'Finish Practice' 
+                        : 'Next Question'}
+                    </motion.button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1255,51 +1578,82 @@ const SATPrep = () => {
                   Question {currentMathIndex + 1} of {currentMathQuestions.length}
                 </div>
                 
-                <h3 className="text-2xl text-emerald-400 font-medium">
+                <h3 className="text-2xl text-emerald-400 font-bold">
                   {currentMathQuestions[currentMathIndex].question}
                 </h3>
 
                 <div className="space-y-3">
-                  {currentMathQuestions[currentMathIndex].options.map((option, index) => (
-                    <button
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={`options-${currentMathIndex}`}
+                      className="space-y-3"
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        visible: {
+                          transition: {
+                            staggerChildren: 0.1
+                          }
+                        }
+                      }}
+                    >
+                      {currentMathQuestions[currentMathIndex].options.map((option, index) => (
+                        <motion.button
                       key={index}
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
                       onClick={() => handleMathAnswer(index)}
                       disabled={mathAnswered}
                       className={`w-full p-4 text-left rounded-lg transition-colors ${
                         mathAnswered
-                          ? index === currentMathQuestions[currentMathIndex].correctIndex
+                              ? index === currentMathQuestions[currentMathIndex].correctIndex
                             ? 'bg-green-500/20 text-green-200'
                             : 'bg-gray-700/50 text-gray-400'
                           : 'bg-gray-700/50 hover:bg-gray-700/80 text-white'
                       }`}
                     >
                       {option}
-                    </button>
+                        </motion.button>
                   ))}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 {mathAnswered && (
                   <div className="mt-4 space-y-4">
-                    <div className={`p-4 rounded-lg ${
-                      isCorrectMath ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
-                    }`}>
-                      <p className="text-4xl font-medium mb-4">
+                    <FeedbackAnimation isCorrect={isCorrectMath}>
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-4xl font-medium mb-4"
+                      >
                         {isCorrectMath ? 'Correct! 🎉' : 'Not quite right. 🤔'}
-                      </p>
-                      <div className="mt-4">
+                      </motion.p>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-4"
+                      >
                         <p className="text-blue-400 text-lg mb-2">Explanation:</p>
                         <p className="text-lg">
                           {currentMathQuestions[currentMathIndex].explanation}
                         </p>
-                      </div>
-                    </div>
+                      </motion.div>
+                    </FeedbackAnimation>
                     
-                    <button
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
                       onClick={handleNextMathQuestion}
                       className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
                     >
                       {currentMathIndex === currentMathQuestions.length - 1 ? 'Finish Practice' : 'Next Question'}
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </div>
@@ -1330,51 +1684,82 @@ const SATPrep = () => {
                   Question {currentSmartyPantsIndex + 1} of {currentSmartyPantsQuestions.length}
                 </div>
                 
-                <h3 className="text-2xl text-emerald-400 font-medium">
+                <h3 className="text-2xl text-emerald-400 font-bold">
                   {currentSmartyPantsQuestions[currentSmartyPantsIndex].question}
                 </h3>
 
                 <div className="space-y-3">
-                  {currentSmartyPantsQuestions[currentSmartyPantsIndex].options.map((option, index) => (
-                    <button
+                  <AnimatePresence mode="wait">
+                    <motion.div 
+                      key={`options-${currentSmartyPantsIndex}`}
+                      className="space-y-3"
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        visible: {
+                          transition: {
+                            staggerChildren: 0.1
+                          }
+                        }
+                      }}
+                    >
+                      {currentSmartyPantsQuestions[currentSmartyPantsIndex].options.map((option, index) => (
+                        <motion.button
                       key={index}
+                          variants={{
+                            hidden: { opacity: 0, x: -20 },
+                            visible: { opacity: 1, x: 0 }
+                          }}
                       onClick={() => handleSmartyPantsAnswer(index)}
                       disabled={smartyPantsAnswered}
-                      className={`w-full p-4 text-left rounded-lg transition-colors ${
-                        smartyPantsAnswered
-                          ? index === currentSmartyPantsQuestions[currentSmartyPantsIndex].correctIndex
-                            ? 'bg-green-500/20 text-green-200'
-                            : 'bg-gray-700/50 text-gray-400'
-                          : 'bg-gray-700/50 hover:bg-gray-700/80 text-white'
-                      }`}
+                          className={`w-full p-4 text-left rounded-lg transition-colors ${
+                            smartyPantsAnswered
+                              ? index === currentSmartyPantsQuestions[currentSmartyPantsIndex].correctIndex
+                                ? 'bg-green-500/20 text-green-200'
+                                : 'bg-gray-700/50 text-gray-400'
+                              : 'bg-gray-700/50 hover:bg-gray-700/80 text-white'
+                          }`}
                     >
                       {option}
-                    </button>
+                        </motion.button>
                   ))}
+                    </motion.div>
+                  </AnimatePresence>
                 </div>
 
                 {smartyPantsAnswered && (
                   <div className="mt-4 space-y-4">
-                    <div className={`p-4 rounded-lg ${
-                      isCorrectSmartyPants ? 'bg-green-500/20 text-green-200' : 'bg-red-500/20 text-red-200'
-                    }`}>
-                      <p className="text-4xl font-medium mb-4">
+                    <FeedbackAnimation isCorrect={isCorrectSmartyPants}>
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-4xl font-medium mb-4"
+                      >
                         {isCorrectSmartyPants ? 'Correct! 🎉' : 'Not quite right. 🤔'}
-                      </p>
-                      <div className="mt-4">
+                      </motion.p>
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="mt-4"
+                      >
                         <p className="text-blue-400 text-lg mb-2">Explanation:</p>
                         <p className="text-lg">
                           {currentSmartyPantsQuestions[currentSmartyPantsIndex].explanation}
                         </p>
-                      </div>
-                    </div>
+                      </motion.div>
+                    </FeedbackAnimation>
                     
-                    <button
+                    <motion.button
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.4 }}
                       onClick={handleNextSmartyPantsQuestion}
                       className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-medium transition-colors"
                     >
                       {currentSmartyPantsIndex === currentSmartyPantsQuestions.length - 1 ? 'Finish Practice' : 'Next Question'}
-                    </button>
+                    </motion.button>
                   </div>
                 )}
               </div>
@@ -1384,6 +1769,12 @@ const SATPrep = () => {
           </div>
         </div>
       )}
+
+      {/* Word of the Day Modal */}
+      <WordOfTheDay 
+        isOpen={showWordOfTheDay}
+        onClose={() => setShowWordOfTheDay(false)}
+      />
 
       {/* Points Animation */}
       {showPointsAnimation && <PointsAnimation points={animationPoints} />}
