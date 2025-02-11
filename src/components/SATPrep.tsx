@@ -353,6 +353,32 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return newArray;
 };
 
+// Keep utility functions and constants outside
+const POINTS_KEY = 'wizKidPoints';
+
+const savePoints = (points: number) => {
+  localStorage.setItem(POINTS_KEY, points.toString());
+};
+
+const loadPoints = (): number => {
+  const saved = localStorage.getItem(POINTS_KEY);
+  return saved ? parseInt(saved) : 0;
+};
+
+// Move the PointsAnimation component outside (it's not using hooks)
+const PointsAnimation = ({ points }: { points: number }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 0 }}
+      animate={{ opacity: [0, 1, 1, 0], y: -100 }}
+      transition={{ duration: 1.5 }}
+      className="absolute top-0 left-1/2 transform -translate-x-1/2 text-yellow-400 font-bold text-2xl"
+    >
+      +{points}
+    </motion.div>
+  );
+};
+
 const SATPrep = () => {
   const { state, dispatch } = useGame();
   const { 
@@ -405,10 +431,29 @@ const SATPrep = () => {
   // Add this state for the FAQ modal
   const [showFAQModal, setShowFAQModal] = useState(false);
 
-  // Add this effect to load user stats on mount
+  // Move all useState and useEffect hooks inside the component
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [showPointsAnimation, setShowPointsAnimation] = useState(false);
+  const [animationPoints, setAnimationPoints] = useState(0);
+
+  // Add this useEffect inside the component
   useEffect(() => {
-    setUserStats(getUserStats());
+    setTotalPoints(loadPoints());
   }, []);
+
+  // Move addPoints function inside the component
+  const addPoints = (amount: number) => {
+    const newTotal = totalPoints + amount;
+    setTotalPoints(newTotal);
+    savePoints(newTotal);
+    
+    // Trigger animation
+    setAnimationPoints(amount);
+    setShowPointsAnimation(true);
+    setTimeout(() => setShowPointsAnimation(false), 1500);
+    
+    playSound('correct');
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -580,13 +625,20 @@ const SATPrep = () => {
     setIsMathModalOpen(true);
   };
 
-  // Update handleMathAnswer to use currentMathQuestions
+  // Update handleMathAnswer to award points
   const handleMathAnswer = (selectedIndex: number) => {
     if (!mathAnswered) {
       const isCorrect = selectedIndex === currentMathQuestions[currentMathIndex].correctIndex;
       setIsCorrectMath(isCorrect);
       setMathAnswered(true);
-      playSound(isCorrect ? 'correct' : 'incorrect');
+      
+      // Award points for correct answers
+      if (isCorrect) {
+        addPoints(10); // Award 10 points for each correct answer
+        playSound('correct');
+      } else {
+        playSound('incorrect');
+      }
     }
   };
 
@@ -613,12 +665,20 @@ const SATPrep = () => {
     setIsSmartyPantsModalOpen(true);
   };
 
+  // Similarly update handleSmartyPantsAnswer
   const handleSmartyPantsAnswer = (selectedIndex: number) => {
     if (!smartyPantsAnswered) {
       const isCorrect = selectedIndex === currentSmartyPantsQuestions[currentSmartyPantsIndex].correctIndex;
       setIsCorrectSmartyPants(isCorrect);
       setSmartyPantsAnswered(true);
-      playSound(isCorrect ? 'correct' : 'incorrect');
+      
+      // Award points for correct answers
+      if (isCorrect) {
+        addPoints(15); // Award 15 points for Smarty Pants (they're harder!)
+        playSound('correct');
+      } else {
+        playSound('incorrect');
+      }
     }
   };
 
@@ -648,6 +708,11 @@ const SATPrep = () => {
         
         {isMenuOpen && (
           <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-white/10">
+            {/* Points Display */}
+            <div className="px-4 py-2 border-b border-white/10">
+              <div className="text-yellow-400 font-bold">Points: {totalPoints}</div>
+            </div>
+            
             <button
               onClick={() => {
                 setShowAboutModal(true);
@@ -657,14 +722,29 @@ const SATPrep = () => {
             >
               About WizKid
             </button>
+            
             <button
               onClick={() => {
                 setShowFAQModal(true);
                 setIsMenuOpen(false);
               }}
-              className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300"
+              className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 border-b border-white/10"
             >
               FAQ
+            </button>
+
+            {/* Reset Points Button */}
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to reset your points? This cannot be undone.')) {
+                  setTotalPoints(0);
+                  savePoints(0);
+                  setIsMenuOpen(false);
+                }
+              }}
+              className="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
+            >
+              Reset Points
             </button>
           </div>
         )}
@@ -771,6 +851,8 @@ const SATPrep = () => {
       {/* Main Content - added pt-32 to create space below logo */}
       <div className="container mx-auto px-4 py-8 pt-32 relative z-10">
         <div className="space-y-8">
+         
+
           {/* Stats and Categories Row */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 
@@ -831,31 +913,20 @@ const SATPrep = () => {
       </Card>
             {/* Combined Stats Card */}
             <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl lg:col-span-2">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-3 gap-4">
+              {/* Add Points Display Card */}
+              <div className="bg-gray-800/50 backdrop-blur-sm border border-white/10 rounded-xl p-6">
+                <div className="flex items-center justify-center">
                   <div className="text-center">
-                    <Star className="w-6 h-6 text-yellow-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-yellow-400">
-                      {state.userStats.totalPoints}
+                    <div className="text-yellow-400 text-4xl font-bold mb-2">
+                      {totalPoints}
                     </div>
-                    <div className="text-xs text-gray-300">Star Points</div>
-                  </div>
-                  <div className="text-center">
-                    <Zap className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-orange-400">
-                      {state.userStats.streak}
+                    <div className="text-gray-400 text-sm">
+                      Wiz Points
                     </div>
-                    <div className="text-xs text-gray-300">Streak</div>
-                  </div>
-                  <div className="text-center">
-                    <Trophy className="w-6 h-6 text-purple-500 mx-auto mb-2" />
-                    <div className="text-2xl font-bold text-purple-400">
-                      {Math.floor(state.userStats.totalPoints / 100)}
-                    </div>
-                    <div className="text-xs text-gray-300">Level</div>
+                    
                   </div>
                 </div>
-              </CardContent>
+              </div>
             </Card>
 
            
@@ -906,35 +977,16 @@ const SATPrep = () => {
       {/* Daily Challenge Modal */}
       {showDailyChallenge && currentQuestion && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
-          {/* Logo above modal */}
-          <div className="mb-6">
-            <img 
-              src="/WIZ KID.png" 
-              alt="WIZ KID Logo" 
-              className="w-64 h-auto"
-            />
-          </div>
-
           {/* Question Modal */}
           <div className="bg-gray-800 rounded-xl max-w-2xl w-full p-8">
             <div className="space-y-6">
-              {/* Progress, Score, and Timer Row */}
+              {/* Progress and Score Row */}
               <div className="flex justify-between items-center mb-4">
                 <div className="text-emerald-400 font-semibold">
                   Question {questionNumber + 1} of 9
                 </div>
                 <div className="text-yellow-400 font-semibold">
                   Score: {state.gameSession.score}
-                </div>
-                <div className={cn(
-                  "font-mono text-2xl font-bold",
-                  state.gameSession.timeLeft <= 10 
-                    ? "text-red-500" 
-                    : state.gameSession.timeLeft <= 30 
-                      ? "text-yellow-400" 
-                      : "text-blue-400"
-                )}>
-                  {formatTime(state.gameSession.timeLeft)}
                 </div>
               </div>
 
@@ -947,8 +999,25 @@ const SATPrep = () => {
                   <button
                     key={index}
                     onClick={() => {
-                      if (handleAnswer) {  // Make sure handleAnswer exists
+                      if (handleAnswer) {
                         handleAnswer(index);
+                        // Log the answer result
+                        const isCorrect = index === currentQuestion.correctIndex;
+                        console.log('Daily Challenge Answer:', { 
+                          isCorrect,
+                          currentScore: state.gameSession.score,
+                          totalPoints
+                        });
+                        
+                        if (isCorrect) {
+                          // Add points for correct answer
+                          const pointsToAdd = 10;
+                          dispatch({ 
+                            type: 'UPDATE_SCORE', 
+                            payload: state.gameSession.score + pointsToAdd 
+                          });
+                          console.log('Added points:', pointsToAdd);
+                        }
                       }
                     }}
                     disabled={answered}
@@ -968,10 +1037,18 @@ const SATPrep = () => {
                 <div className="mt-4">
                   <p className="text-gray-300">{currentQuestion.explanation}</p>
                   <button
-                    onClick={nextQuestion}
+                    onClick={() => {
+                      if (questionNumber === 7) {
+                        // Only show game over, don't update points here
+                        setShowGameOver(true);
+                        setShowDailyChallenge(false);
+                      } else {
+                        nextQuestion();
+                      }
+                    }}
                     className="mt-4 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold"
                   >
-                    {questionNumber === 8 ? 'Finish' : 'Next Question'}
+                    {questionNumber === 7 ? 'Finish Challenge' : 'Next Question'}
                   </button>
                 </div>
               )}
@@ -986,29 +1063,39 @@ const SATPrep = () => {
           <div className="bg-gray-800 rounded-xl max-w-lg w-full p-8">
             <div className="text-center space-y-6">
               <h2 className="text-4xl font-bold text-emerald-400">
-                {state.gameSession.timeLeft === 0 ? "Time's Up! ⏰" : "Challenge Complete!"}
+                Challenge Complete! 🎉
               </h2>
               <div className="py-8 space-y-4">
                 <div>
-                <div className="text-5xl font-bold text-yellow-400 mb-2">
+                  <div className="text-5xl font-bold text-yellow-400 mb-2">
                     +{state.gameSession.score}
-                </div>
-                <div className="text-gray-400">Star Points Earned</div>
+                  </div>
+                  <div className="text-gray-400">Points Earned</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold text-emerald-400">
-                    {state.userStats.totalPoints}
+                    {totalPoints + state.gameSession.score}
                   </div>
                   <div className="text-gray-400">Total Points</div>
                 </div>
-                {state.gameSession.timeLeft > 0 && (
-                  <div className="text-blue-400 mt-2">
-                    Completed with {formatTime(state.gameSession.timeLeft)} remaining!
-                  </div>
-                )}
               </div>
               <button
-                onClick={() => setShowGameOver(false)}
+                onClick={() => {
+                  // Update points before closing
+                  const newTotal = totalPoints + state.gameSession.score;
+                  console.log('Game Over - Updating points:', { 
+                    currentTotal: totalPoints,
+                    sessionScore: state.gameSession.score,
+                    newTotal 
+                  });
+                  setTotalPoints(newTotal);
+                  savePoints(newTotal);
+                  // Reset game state
+                  setShowGameOver(false);
+                  if (nextQuestion) nextQuestion();
+                  // Reset session score
+                  dispatch({ type: 'RESET_SCORE' });
+                }}
                 className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold text-lg transition-colors"
               >
                 Back to Dashboard
@@ -1022,6 +1109,14 @@ const SATPrep = () => {
       {isVocabModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
           <div className="relative bg-gray-800 rounded-xl max-w-4xl w-full p-8">
+            {/* Add close button */}
+            <button
+              onClick={() => setIsVocabModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
             <h2 className="text-2xl font-bold text-gray-400 mb-8">Vocabulary Practice</h2>
             
             {currentVocabQuestions.length > 0 ? (
@@ -1087,32 +1182,44 @@ const SATPrep = () => {
 
       {/* Reading Practice Modal */}
       {isReadingModalOpen && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-xl max-w-4xl w-full p-8">
-            <h2 className="text-3xl font-bold text-white mb-8">Reading Practice</h2>
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative bg-gray-800 rounded-xl max-w-5xl w-full p-8 max-h-[90vh] overflow-y-auto">
+            {/* Add close button */}
+            <button
+              onClick={() => setIsReadingModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            <h2 className="text-2xl font-bold text-gray-400 mb-6">Reading Practice</h2>
             
-            <div className="space-y-8">
-              <div className="text-base text-gray-400">
-                Passage {currentPassageIndex + 1} of {readingPassages.length}
-              </div>
-              
-              <div className="bg-gray-700/50 p-8 rounded-lg">
-                <p className="text-white text-lg leading-relaxed">
-                  {readingPassages[currentPassageIndex].text}
-                </p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Passage on the left */}
+              <div className="space-y-4">
+                <div className="text-sm text-gray-400">
+                  Passage {currentPassageIndex + 1} of {readingPassages.length}
+                </div>
+                
+                <div className="bg-gray-700/50 p-6 rounded-lg h-[calc(90vh-12rem)] overflow-y-auto">
+                  <p className="text-white text-lg leading-relaxed">
+                    {readingPassages[currentPassageIndex].text}
+                  </p>
+                </div>
               </div>
 
+              {/* Questions on the right */}
               <div className="space-y-6">
-                <h3 className="text-2xl text-white font-medium">
+                <h3 className="text-xl text-emerald-400 font-medium">
                   {readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].question}
                 </h3>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {readingPassages[currentPassageIndex].questions[currentReadingQuestionIndex].options.map((option, index) => (
                     <button
                       key={index}
                       onClick={() => handleReadingAnswer(index)}
-                      className="w-full p-5 text-left rounded-lg bg-gray-700/50 hover:bg-gray-700/80 transition-colors text-white text-lg"
+                      className="w-full p-4 text-left rounded-lg bg-gray-700/50 hover:bg-gray-700/80 transition-colors text-white"
                     >
                       {option}
                     </button>
@@ -1120,13 +1227,6 @@ const SATPrep = () => {
                 </div>
               </div>
             </div>
-
-            <button
-              onClick={() => setIsReadingModalOpen(false)}
-              className="mt-8 px-8 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-lg"
-            >
-              Close Practice
-            </button>
           </div>
         </div>
       )}
@@ -1135,12 +1235,18 @@ const SATPrep = () => {
       {isMathModalOpen && (
         <div 
           className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8"
-          onClick={() => setIsMathModalOpen(false)}
         >
           <div 
             className="relative bg-gray-800 rounded-xl max-w-4xl w-full p-8 max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
           >
+            {/* Add close button */}
+            <button
+              onClick={() => setIsMathModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
             <h2 className="text-2xl font-bold text-gray-400 mb-8">Math Practice</h2>
             
             {currentMathQuestions.length > 0 ? (
@@ -1208,6 +1314,14 @@ const SATPrep = () => {
       {isSmartyPantsModalOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-8">
           <div className="relative bg-gray-800 rounded-xl max-w-4xl w-full p-8">
+            {/* Add close button */}
+            <button
+              onClick={() => setIsSmartyPantsModalOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
             <h2 className="text-2xl font-bold text-gray-400 mb-8">Smarty Pants</h2>
             
             {currentSmartyPantsQuestions.length > 0 ? (
@@ -1270,6 +1384,9 @@ const SATPrep = () => {
           </div>
         </div>
       )}
+
+      {/* Points Animation */}
+      {showPointsAnimation && <PointsAnimation points={animationPoints} />}
     </div>
   );
 };
