@@ -113,6 +113,216 @@ export const smartyPantsProblems: Question[] = [
     ],
     correctIndex: 1,
     explanation: "Africa has 54 countries, more than any other continent."
+  },
+  {
+    question: "Which ancient wonder of the world was located in Alexandria, Egypt?",
+    options: ["The Lighthouse", "The Hanging Gardens", "The Colossus", "The Temple of Artemis"],
+    correctIndex: 0,
+    explanation: "The Lighthouse (Pharos) of Alexandria was one of the Seven Wonders of the Ancient World, guiding ships into the harbor."
+  },
+  {
+    question: "Who was the first Emperor of Rome?",
+    options: ["Julius Caesar", "Augustus", "Nero", "Constantine"],
+    correctIndex: 1,
+    explanation: "Augustus (born Octavian) became the first Roman Emperor after defeating Mark Antony and Cleopatra."
+  },
+  {
+    question: "Which empire was ruled by Mansa Musa, considered one of the wealthiest people in history?",
+    options: ["Ottoman Empire", "Persian Empire", "Mali Empire", "Mongol Empire"],
+    correctIndex: 2,
+    explanation: "Mansa Musa ruled the Mali Empire in the 14th century and was known for his incredible wealth and famous pilgrimage to Mecca."
+  },
+  {
+    question: "The Renaissance period began in which modern-day country?",
+    options: ["France", "England", "Spain", "Italy"],
+    correctIndex: 3,
+    explanation: "The Renaissance began in Italy during the late Middle Ages and later spread throughout Europe."
+  },
+  {
+    question: "Who is credited with inventing the first practical telephone?",
+    options: ["Alexander Graham Bell", "Thomas Edison", "Nikola Tesla", "Guglielmo Marconi"],
+    correctIndex: 0,
+    explanation: "Alexander Graham Bell patented the first practical telephone in 1876."
+  },
+  {
+    question: "What was the name of the first artificial satellite launched into space?",
+    options: ["Explorer 1", "Vanguard 1", "Sputnik 1", "Apollo 1"],
+    correctIndex: 2,
+    explanation: "Sputnik 1 was launched by the Soviet Union in 1957, marking the beginning of the Space Age."
+  },
+  {
+    question: "Which is the largest desert in the world?",
+    options: ["Sahara Desert", "Arabian Desert", "Antarctic Desert", "Arctic Desert"],
+    correctIndex: 2,
+    explanation: "The Antarctic Desert is the largest desert in the world, as a desert is defined by its precipitation rather than temperature."
+  },
+  {
+    question: "Which country is known as the 'Land of the Rising Sun'?",
+    options: ["China", "Korea", "Thailand", "Japan"],
+    correctIndex: 3,
+    explanation: "Japan is known as the 'Land of the Rising Sun' - the Japanese word for Japan (Nippon) literally means 'origin of the sun'."
+  },
+  {
+    question: "Who painted 'The Starry Night'?",
+    options: ["Vincent van Gogh", "Pablo Picasso", "Claude Monet", "Leonardo da Vinci"],
+    correctIndex: 0,
+    explanation: "Vincent van Gogh painted 'The Starry Night' in 1889 while he was staying at the Saint-Paul-de-Mausole asylum."
+  },
+  {
+    question: "Which playwright wrote 'Romeo and Juliet'?",
+    options: ["Christopher Marlowe", "William Shakespeare", "Ben Jonson", "John Webster"],
+    correctIndex: 1,
+    explanation: "William Shakespeare wrote 'Romeo and Juliet' in the 1590s, and it remains one of his most popular plays."
+  },
+  {
+    question: "What is the hardest natural substance on Earth?",
+    options: ["Gold", "Iron", "Diamond", "Platinum"],
+    correctIndex: 2,
+    explanation: "Diamond is the hardest natural substance, ranking 10 on the Mohs scale of mineral hardness."
+  },
+  {
+    question: "Which planet has the most moons in our solar system?",
+    options: ["Saturn", "Jupiter", "Uranus", "Neptune"],
+    correctIndex: 0,
+    explanation: "Saturn has the most confirmed moons, with 82 confirmed natural satellites."
+  },
+  {
+    question: "Who was the first woman to win a Nobel Prize?",
+    options: ["Marie Curie", "Mother Teresa", "Pearl Buck", "Jane Addams"],
+    correctIndex: 0,
+    explanation: "Marie Curie won the Nobel Prize in Physics in 1903 and later won another in Chemistry in 1911."
+  },
+  {
+    question: "Which ancient Greek philosopher was the teacher of Alexander the Great?",
+    options: ["Socrates", "Plato", "Aristotle", "Pythagoras"],
+    correctIndex: 2,
+    explanation: "Aristotle was hired by Philip II of Macedon to tutor his son Alexander, who later became Alexander the Great."
+  },
+  {
+    question: "Who is credited with inventing the World Wide Web?",
+    options: ["Bill Gates", "Steve Jobs", "Tim Berners-Lee", "Mark Zuckerberg"],
+    correctIndex: 2,
+    explanation: "Tim Berners-Lee invented the World Wide Web in 1989 while working at CERN."
+  },
+  {
+    question: "Who wrote the '95 Theses' that began the Protestant Reformation?",
+    options: ["John Calvin", "Martin Luther", "Henry VIII", "Pope Leo X"],
+    correctIndex: 1,
+    explanation: "Martin Luther posted his '95 Theses' on a church door in 1517, challenging Catholic Church practices and starting the Protestant Reformation."
+  },
+  {
+    question: "Which ancient Greek philosopher was known for teaching Plato?",
+    options: ["Socrates", "Aristotle", "Pythagoras", "Homer"],
+    correctIndex: 0,
+    explanation: "Socrates was a famous philosopher in Athens who taught Plato. He is known for the 'Socratic method' of asking questions to encourage critical thinking."
+  },
+  {
+    question: "Which disease was known as the 'Black Death' in medieval Europe?",
+    options: ["Smallpox", "Bubonic Plague", "Cholera", "Influenza"],
+    correctIndex: 1,
+    explanation: "The Bubonic Plague, known as the Black Death, killed about one-third of Europe's population in the 14th century."
+  },
+  {
+    question: "Which document limited the power of the English king in 1215?",
+    options: ["Magna Carta", "Declaration of Independence", "Bill of Rights", "Constitution"],
+    correctIndex: 0,
+    explanation: "The Magna Carta was signed by King John in 1215, limiting royal power and protecting certain rights of English citizens."
+  },
+  {
+    question: "Which ancient civilization built the Parthenon?",
+    options: ["Romans", "Egyptians", "Greeks", "Persians"],
+    correctIndex: 2,
+    explanation: "The ancient Greeks built the Parthenon in Athens as a temple to their goddess Athena."
+  },
+  {
+    question: "Who was the first President of the United States?",
+    options: ["Thomas Jefferson", "John Adams", "Benjamin Franklin", "George Washington"],
+    correctIndex: 3,
+    explanation: "George Washington served as the first President of the United States from 1789 to 1797."
+  },
+  {
+    question: "Which queen ruled England for 63 years during the Victorian Era?",
+    options: ["Queen Elizabeth I", "Queen Victoria", "Queen Mary", "Queen Anne"],
+    correctIndex: 1,
+    explanation: "Queen Victoria ruled from 1837 to 1901, giving her name to the Victorian Era of British history."
+  },
+  {
+    question: "Who wrote the Declaration of Independence?",
+    options: ["Thomas Jefferson", "George Washington", "Benjamin Franklin", "John Adams"],
+    correctIndex: 0,
+    explanation: "Thomas Jefferson was the main author of the Declaration of Independence in 1776."
+  },
+  {
+    question: "What is the largest organ in the human body?",
+    options: ["Heart", "Brain", "Liver", "Skin"],
+    correctIndex: 3,
+    explanation: "The skin is the largest organ in the human body, protecting everything inside."
+  },
+  {
+    question: "Which animal is known as the 'King of the Jungle'?",
+    options: ["Tiger", "Lion", "Elephant", "Gorilla"],
+    correctIndex: 1,
+    explanation: "The lion is known as the 'King of the Jungle', even though it actually lives in grasslands and savannas."
+  },
+  {
+    question: "What is the closest planet to the Sun?",
+    options: ["Venus", "Mars", "Mercury", "Earth"],
+    correctIndex: 2,
+    explanation: "Mercury is the closest planet to the Sun in our solar system."
+  },
+  {
+    question: "Which ocean is the largest?",
+    options: ["Atlantic", "Indian", "Arctic", "Pacific"],
+    correctIndex: 3,
+    explanation: "The Pacific Ocean is the largest and deepest ocean on Earth."
+  },
+  {
+    question: "What is the capital city of Japan?",
+    options: ["Tokyo", "Beijing", "Seoul", "Bangkok"],
+    correctIndex: 0,
+    explanation: "Tokyo is the capital city of Japan and one of the largest cities in the world."
+  },
+  {
+    question: "Which famous scientist developed the theory of gravity?",
+    options: ["Albert Einstein", "Isaac Newton", "Galileo Galilei", "Charles Darwin"],
+    correctIndex: 1,
+    explanation: "Isaac Newton developed the theory of gravity after allegedly seeing an apple fall from a tree."
+  },
+  {
+    question: "What is the main ingredient in chocolate?",
+    options: ["Cocoa beans", "Sugar", "Milk", "Vanilla"],
+    correctIndex: 0,
+    explanation: "Chocolate is made primarily from cocoa beans, which come from the cacao tree."
+  },
+  {
+    question: "Which dinosaur was the largest meat-eater of all time?",
+    options: ["T-Rex", "Spinosaurus", "Allosaurus", "Velociraptor"],
+    correctIndex: 1,
+    explanation: "The Spinosaurus was the largest known carnivorous dinosaur, even bigger than T-Rex."
+  },
+  {
+    question: "What causes the seasons on Earth?",
+    options: ["Distance from the Sun", "Earth's tilt", "The Moon", "Ocean currents"],
+    correctIndex: 1,
+    explanation: "Earth's seasons are caused by its 23.5-degree tilt as it orbits the Sun."
+  },
+  {
+    question: "Who painted the Mona Lisa?",
+    options: ["Leonardo da Vinci", "Michelangelo", "Raphael", "Donatello"],
+    correctIndex: 0,
+    explanation: "Leonardo da Vinci painted the Mona Lisa in the early 16th century."
+  },
+  {
+    question: "What is the longest river in the world?",
+    options: ["Amazon", "Nile", "Mississippi", "Yangtze"],
+    correctIndex: 1,
+    explanation: "The Nile River in Africa is the longest river in the world."
+  },
+  {
+    question: "Which instrument has 88 keys?",
+    options: ["Guitar", "Piano", "Violin", "Drums"],
+    correctIndex: 1,
+    explanation: "A standard piano has 88 keys - 52 white keys and 36 black keys."
   }
 ];
 

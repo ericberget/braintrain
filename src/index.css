@@ -3,10 +3,35 @@
   src: url('/fonts/frontage-outline.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 
 .frontage-font {
   font-family: 'Frontage', sans-serif;
+}
+
+@font-face {
+  font-family: 'Brandon Grotesque';
+  src: url('/fonts/brandon-grotesque-black.woff2') format('woff2');
+  font-weight: 900;
+}
+
+@font-face {
+  font-family: 'Brandon Grotesque';
+  src: url('/fonts/brandon-grotesque-bold.woff2') format('woff2');
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Brandon Grotesque';
+  src: url('/fonts/brandon-grotesque-medium.woff2') format('woff2');
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Brandon Grotesque';
+  src: url('/fonts/brandon-grotesque-regular.woff2') format('woff2');
+  font-weight: 400;
 }
 
 @tailwind base;
@@ -91,4 +116,13 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }

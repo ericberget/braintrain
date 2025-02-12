@@ -2,35 +2,49 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Volume2, X, Loader2 } from 'lucide-react';
 import { spellingWords } from '../data/spellingWords';
+import { useGame } from '../context/GameContext';
+import { startOfDay } from 'date-fns';
 
-interface WordOfTheDayProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
+  mode?: 'daily' | 'practice'; // New prop to determine mode
+}
+
+interface SpellingWord {
+  word: string;
+  definition: string;
+  sentence: string;
+  example: string;
 }
 
 const VOICE_ID = 'TxGEqnHWrfWFTfGW9XjX'; // Josh voice - deep male voice
 
-const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
+const WordOfTheDay = ({ isOpen, onClose, mode = 'daily' }: Props) => {
   console.log('WordOfTheDay component rendering...');
-  console.log('Current props:', { isOpen, onClose });
+  console.log('Current props:', { isOpen, onClose, mode });
 
+  const [currentWord, setCurrentWord] = useState('');
   const [userInput, setUserInput] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [shuffledWords, setShuffledWords] = useState([...spellingWords]);
+  const { addPoints } = useGame(); // Assuming you have this context
 
   useEffect(() => {
     if (isOpen) {
-      const shuffled = [...spellingWords].sort(() => Math.random() - 0.5);
-      setShuffledWords(shuffled);
-      setCurrentWordIndex(0);
-      setUserInput('');
-      setHasSubmitted(false);
-      setIsCorrect(false);
+      // For daily challenge, use date-based selection
+      if (mode === 'daily') {
+        const today = startOfDay(new Date()).getTime();
+        const wordIndex = today % spellingWords.length;
+        setCurrentWord(spellingWords[wordIndex].word);
+      } else {
+        // For practice mode, random selection
+        const randomWord = spellingWords[Math.floor(Math.random() * spellingWords.length)];
+        setCurrentWord(randomWord.word);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, mode]);
 
   const playFeedback = async (isCorrect: boolean) => {
     try {
@@ -75,26 +89,18 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
   };
 
   const handleSubmit = () => {
-    const correct = userInput.toLowerCase().trim() === shuffledWords[currentWordIndex].word.toLowerCase();
+    const correct = userInput.toLowerCase().trim() === currentWord.toLowerCase();
     setIsCorrect(correct);
     setHasSubmitted(true);
-    playFeedback(correct);
-  };
 
-  const handleNext = () => {
-    if (currentWordIndex < shuffledWords.length - 1) {
-      setCurrentWordIndex(prev => prev + 1);
-      setUserInput('');
-      setHasSubmitted(false);
-      setIsCorrect(false);
-    } else {
-      // End of all words
-      onClose();
-      setCurrentWordIndex(0);
-      setUserInput('');
-      setHasSubmitted(false);
-      setIsCorrect(false);
+    if (correct && mode === 'daily') {
+      addPoints(50); // Award points only for daily challenge
+      // Save completion to localStorage
+      const today = startOfDay(new Date()).toISOString();
+      localStorage.setItem('lastSpellingChallenge', today);
     }
+
+    playFeedback(correct);
   };
 
   const speakWord = async () => {
@@ -109,7 +115,7 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
             'xi-api-key': import.meta.env.VITE_ELEVEN_LABS_API_KEY,
           },
           body: JSON.stringify({
-            text: shuffledWords[currentWordIndex].word,
+            text: currentWord,
             model_id: 'eleven_monolingual_v1',
             voice_settings: {
               stability: 0.5,
@@ -136,6 +142,10 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
   const speakSentence = async () => {
     try {
       setIsLoading(true);
+      // Find the current word object to get its sentence
+      const wordObject = spellingWords.find(w => w.word === currentWord);
+      const sentence = wordObject?.sentence || currentWord;
+
       const response = await fetch(
         `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}/stream`,
         {
@@ -145,7 +155,7 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
             'xi-api-key': import.meta.env.VITE_ELEVEN_LABS_API_KEY,
           },
           body: JSON.stringify({
-            text: shuffledWords[currentWordIndex].sentence.replace('______', shuffledWords[currentWordIndex].word),
+            text: sentence,
             model_id: 'eleven_monolingual_v1',
             voice_settings: {
               stability: 0.5,
@@ -168,8 +178,6 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
       setIsLoading(false);
     }
   };
-
-  const currentWord = shuffledWords[currentWordIndex];
 
   return (
     <AnimatePresence>
@@ -196,11 +204,8 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
             <div className="space-y-8">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-emerald-400">
-                  Spelling Practice
+                  {mode === 'daily' ? 'Word of the Day Challenge' : 'Spelling Practice'}
                 </h2>
-                <div className="text-sm text-gray-400">
-                  Word {currentWordIndex + 1} of {shuffledWords.length}
-                </div>
               </div>
 
               <div className="space-y-8">
@@ -233,8 +238,8 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
                 </div>
 
                 <div className="bg-gray-700/30 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <p className="text-2xl font-bold text-white text-center">
-                    {shuffledWords[currentWordIndex].sentence}
+                  <p className="text-xl font-bold text-white text-center">
+                    {spellingWords.find(w => w.word === currentWord)?.sentence || 'Loading...'}
                   </p>
                 </div>
 
@@ -244,7 +249,7 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
                       type="text"
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
-                      placeholder="Type the word you hear..."
+                      placeholder="Type the word..."
                       className="w-full p-4 bg-gray-700/50 rounded-lg text-white text-2xl font-bold placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <button
@@ -266,27 +271,37 @@ const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
                       <p className="text-2xl font-medium mb-2">
                         {isCorrect ? 'Correct! 🎉' : 'Not quite right 🤔'}
                       </p>
-                      <p>The word was: <span className="font-bold">{shuffledWords[currentWordIndex].word}</span></p>
+                      <p>The word was: <span className="font-bold">{currentWord}</span></p>
                     </div>
 
                     <div className="space-y-2">
                       <p className="text-blue-400">Definition:</p>
-                      <p className="text-white">{shuffledWords[currentWordIndex].definition}</p>
+                      <p className="text-white">
+                        {spellingWords.find(w => w.word === currentWord)?.definition}
+                      </p>
                     </div>
 
                     <div className="space-y-2">
                       <p className="text-blue-400">Example:</p>
-                      <p className="text-white italic">{shuffledWords[currentWordIndex].example}</p>
+                      <p className="text-white italic">
+                        {spellingWords.find(w => w.word === currentWord)?.sentence}
+                      </p>
                     </div>
+
+                    {isCorrect && mode === 'daily' && (
+                      <div className="text-yellow-400 text-lg">
+                        +50 points earned!
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
                 {hasSubmitted && (
                   <motion.button
-                    onClick={handleNext}
+                    onClick={onClose}
                     className="w-full px-6 py-4 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-xl font-bold transition-colors"
                   >
-                    {currentWordIndex === shuffledWords.length - 1 ? 'Finish Practice' : 'Next Word'}
+                    Close
                   </motion.button>
                 )}
               </div>

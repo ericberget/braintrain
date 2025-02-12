@@ -10,7 +10,8 @@ import {
   Zap,
   Trophy,
   MessageSquare,
-  X
+  X,
+  Brain
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent } from './ui/card';
@@ -26,6 +27,13 @@ import {
   readingPassages 
 } from '../data/questions';
 import WordOfTheDay from './WordOfTheDay';
+import WorksheetGenerator from './WorksheetGenerator';
+import FormulaReference from './FormulaReference';
+import LearningGames from './LearningGames';
+import FeedbackModal from './FeedbackModal';
+import FlashcardCreator from './FlashcardCreator';
+
+console.log('DEPLOYMENT TEST - ' + new Date().toISOString());
 
 console.log('SATPrep component loading...');
 console.log('date-fns import check:', startOfDay);
@@ -549,6 +557,9 @@ const SATPrep = () => {
   // Add state for Word of the Day modal
   const [showWordOfTheDay, setShowWordOfTheDay] = useState(false);
 
+  // Add state for feedback modal
+  const [showFeedback, setShowFeedback] = useState(false);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -815,6 +826,14 @@ const SATPrep = () => {
 
   return (
     <div className="min-h-screen relative bg-gradient-to-b from-black to-gray-900">
+      {/* Add Feedback button to bottom-right corner */}
+      <button
+        onClick={() => setShowFeedback(true)}
+        className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-gray-800/90 text-gray-300 hover:text-white transition-colors rounded-lg backdrop-blur-sm border border-gray-700/50"
+      >
+        Feedback
+      </button>
+
       {/* Hamburger Menu */}
       <div className="absolute top-4 right-4 z-50">
         <button 
@@ -958,18 +977,17 @@ const SATPrep = () => {
       />
       
       {/* Logo */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute left-1/2 transform -translate-x-1/2 z-10">
         <img 
           src="/WIZ KID.png" 
           alt="WIZ KID Logo" 
-          className="w-72 h-auto"
+          className="w-72 mt-6 h-auto"
         />
       </div>
 
       {/* Main Content - added pt-32 to create space below logo */}
       <div className="container mx-auto px-4 py-8 pt-32 relative z-10">
         <div className="space-y-8">
-
 
           {/* Stats and Categories Row */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -1014,7 +1032,7 @@ const SATPrep = () => {
               <img 
                 src="/wizquizLogo.png" 
                 alt="WizQuiz Challenge" 
-                className="h-16"
+                className="h-16 "
               />
                         {state.dailyProgress.completed && (
                           <div className="flex items-center space-x-2 text-emerald-400">
@@ -1050,21 +1068,7 @@ const SATPrep = () => {
       </Card>
             </motion.div>
 
-            {/* Points Card - simplified */}
-            <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl">
-              <div className="p-4">
-                <div className="flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-yellow-400 text-3xl font-bold mb-1">
-                      {totalPoints}
-                    </div>
-                    <div className="text-gray-400 text-xs">
-                      Wiz Points
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
+           
 
             {/* WizSpeller Card - simplified */}
             <Card 
@@ -1072,13 +1076,39 @@ const SATPrep = () => {
               className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl cursor-pointer hover:bg-white/5 transition-colors"
             >
               <div className="p-4">
-                <div className="text-center space-y-1">
-                  <div className="text-purple-400 text-lg font-bold">WizSpeller</div>
-                  <div className="text-gray-400 text-sm">Word of the Day</div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-emerald-400 text-3xl font-bold">SpellingWiz</div>
+                    <div className="text-gray-400 text-sm">Daily Spelling Challenge</div>
+                    </div>
+                  {state.dailySpelling?.completed ? (
+                    <div className="flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-400" />
+                      <span className="text-yellow-400">+50 points</span>
+                  </div>
+                  ) : (
+                    <div className="text-emerald-400"> </div>
+                  )}
+                    </div>
+                  </div>
+            </Card> {/* Points Card - simplified */}
+            <Card className="bg-black/20 backdrop-blur-lg border border-white/10 shadow-xl">
+              <div className="p-4">
+                <div className="flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-emerald-400 mt-2 text-3xl font-bold mb-1">
+                      {totalPoints}
+                    </div>
+                    <div className="text-gray-400 text-xs">
+                      Wiz Points
+                  </div>
                 </div>
-              </div>
+                  </div>
+                </div>
             </Card>
           </div>
+
+           
 
           {/* Quick Start / Focused Practice Section */}
           <motion.div
@@ -1086,7 +1116,7 @@ const SATPrep = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.3 }}
           >
-            <h2 className="text-xl font-bold text-gray-100 mb-4">Focused Practice</h2>
+            <h2 className="text-xl font-bold text-gray-100 mb-4">Practice by Subject</h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {/* Vocabulary Button */}
               <button
@@ -1117,17 +1147,17 @@ const SATPrep = () => {
                 onClick={handleSmartyPantsButtonClick}
                 className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all hover:scale-105"
               >
-                <Lightbulb className="w-6 h-6 mb-2 mx-auto text-yellow-400" />
+                <Lightbulb className="w-6 h-6 mb-2 mx-auto text-blue-400" />
                 <div className="text-sm font-medium text-gray-300">Smarty Pants</div>
               </button>
 
-              {/* Spelling Button (previously Word of the Day) */}
+              {/* Brain Games Button */}
               <button
-                onClick={() => setShowWordOfTheDay(true)}
+                onClick={() => document.getElementById('brain-games').scrollIntoView({ behavior: 'smooth' })}
                 className="p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-all hover:scale-105"
               >
-                <Pen className="w-6 h-6 mb-2 mx-auto text-purple-400" />
-                <div className="text-sm font-medium text-gray-300">Spelling</div>
+                <Brain className="w-6 h-6 mb-2 mx-auto text-blue-400" />
+                <div className="text-sm font-medium text-gray-300">Brain Games</div>
               </button>
             </div>
           </motion.div>
@@ -1402,9 +1432,9 @@ const SATPrep = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="text-4xl font-medium mb-4"
+                  className="text-2xl font-medium mb-4"
                 >
-                  {isCorrectVocab ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                  {isCorrectVocab ? 'Correct!' : 'Not quite right. '}
                 </motion.p>
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -1525,7 +1555,7 @@ const SATPrep = () => {
                         transition={{ delay: 0.2 }}
                         className="text-4xl font-medium mb-4"
                       >
-                        {isCorrectReading ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                        {isCorrectReading ? 'Correct!' : 'Not quite right.'}
                       </motion.p>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -1636,7 +1666,7 @@ const SATPrep = () => {
                         transition={{ delay: 0.2 }}
                         className="text-4xl font-medium mb-4"
                       >
-                        {isCorrectMath ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                        {isCorrectMath ? 'Correct!' : 'Not quite right.'}
                       </motion.p>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -1742,7 +1772,7 @@ const SATPrep = () => {
                         transition={{ delay: 0.2 }}
                         className="text-4xl font-medium mb-4"
                       >
-                        {isCorrectSmartyPants ? 'Correct! 🎉' : 'Not quite right. 🤔'}
+                        {isCorrectSmartyPants ? 'Correct!' : 'Not quite right.'}
                       </motion.p>
                       <motion.div
                         initial={{ opacity: 0, y: 10 }}
@@ -1784,6 +1814,201 @@ const SATPrep = () => {
 
       {/* Points Animation */}
       {showPointsAnimation && <PointsAnimation points={animationPoints} />}
+
+      {/* Add a divider and some padding */}
+      <div className=" mt-20"></div>
+      {/* Tools Section */}
+      <div className="relative z-10 bg-gradient-to-b from-transparent via-gray-900/50 to-black">
+        {/* Add subtle dot pattern background */}
+        <div 
+          className="absolute inset-0 opacity-[0.02]"
+          style={{ 
+            backgroundImage: `radial-gradient(
+              circle at center,
+              #ffffff 1px,
+              transparent 1px
+            )`,
+            backgroundSize: '24px 24px'
+          }}
+        />
+        
+        <div className="border-t border-gray-700/20"></div>
+        <div className="container mx-auto px-4 py-20 relative">
+          <h2 className="text-4xl font-bold text-gray-100 mb-2">Learning Tools</h2>
+          <p className="text-gray-400 mb-12">Generate custom worksheets and create flashcard sets to enhance your learning</p>
+          
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Worksheet Generator Column */}
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-8 border border-gray-700/50">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <WorksheetGenerator />
+                </motion.div>
+              </div>
+            </div>
+
+            {/* Flashcard Creator Column */}
+            <div className="space-y-6">
+              <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-8 border border-gray-700/50">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                >
+                  <FlashcardCreator />
+                </motion.div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Learning Games Section */}
+      <div id="brain-games" className="relative z-10 min-h-[600px] bg-gradient-to-b from-black to-gray-900">
+        {/* Add diagonal stripes background */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{ 
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              #ffffff,
+              #ffffff 1px,
+              transparent 1px,
+              transparent 12px
+            )`
+          }}
+        />
+        
+        <div className="border-t p-10 border-gray-700/50"></div>
+        <div className="container mx-auto px-4 relative"> {/* Add relative here */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.3 }}
+          >
+            <LearningGames />
+          </motion.div>
+        </div>
+      </div>
+      
+      {/* Footer Section */}
+      <footer className="relative z-10 bg-gray-900 border-t border-gray-800">
+        <div className="container mx-auto px-4 py-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            {/* About Column */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-300 mb-4">About WizKid</h3>
+              <p className="text-gray-400 text-sm">
+                Helping middle school students stay engaged and on track with interactive learning challenges and tools.
+              </p>
+              <div className="mt-4 pt-4 border-t border-gray-800">
+                <a 
+                  href="https://ericberget.com" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-gray-500 hover:text-emerald-400 text-sm"
+                >
+                  Created by: ericberget.com
+                </a>
+              </div>
+            </div>
+
+            {/* Quick Links */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-300 mb-4">Quick Links</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <button onClick={() => setShowWordOfTheDay(true)} className="text-gray-400 hover:text-emerald-400">
+                    Word of the Day
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setShowAboutModal(true)} className="text-gray-400 hover:text-emerald-400">
+                    About Us
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setShowFAQModal(true)} className="text-gray-400 hover:text-emerald-400">
+                    FAQ
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => setShowFeedback(true)} className="text-gray-400 hover:text-emerald-400">
+                    Send Feedback
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-300 mb-4">Resources</h3>
+              <ul className="space-y-2 text-sm">
+                <li>
+                  <a href="#worksheets" className="text-gray-400 hover:text-emerald-400">
+                    Practice Worksheets
+                  </a>
+                </li>
+                <li>
+                  <a href="#flashcards" className="text-gray-400 hover:text-emerald-400">
+                    Flashcard Sets
+                  </a>
+                </li>
+                <li>
+                  <a href="#brain-games" className="text-gray-400 hover:text-emerald-400">
+                    Brain Games
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Updates/Newsletter */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-300 mb-4">Stay Updated</h3>
+              <p className="text-gray-400 text-sm mb-4">
+                Get notified about new features and educational content.
+              </p>
+              <div className="flex gap-2">
+                <input 
+                  type="email" 
+                  placeholder="Enter your email"
+                  className="px-3 py-2 bg-gray-800 rounded-lg text-sm text-gray-300 flex-grow"
+                />
+                <button className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm text-white">
+                  Subscribe
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Bar */}
+          <div className="mt-12 pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="text-gray-500 text-sm">
+              © 2024 WizKid. All rights reserved.
+            </div>
+            <div className="flex gap-6">
+              <a href="/privacy" className="text-gray-500 hover:text-gray-400 text-sm">Privacy Policy</a>
+              <a href="/terms" className="text-gray-500 hover:text-gray-400 text-sm">Terms of Use</a>
+              <button 
+                onClick={() => setShowFeedback(true)}
+                className="text-gray-500 hover:text-gray-400 text-sm"
+              >
+                Contact Us
+              </button>
+            </div>
+          </div>
+        </div>
+      </footer>
+
+      {/* Feedback Modal */}
+      <FeedbackModal 
+        isOpen={showFeedback}
+        onClose={() => setShowFeedback(false)}
+      />
     </div>
   );
 };
