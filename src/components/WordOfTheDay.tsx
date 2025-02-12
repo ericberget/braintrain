@@ -11,6 +11,9 @@ interface WordOfTheDayProps {
 const VOICE_ID = 'TxGEqnHWrfWFTfGW9XjX'; // Josh voice - deep male voice
 
 const WordOfTheDay = ({ isOpen, onClose }: WordOfTheDayProps) => {
+  console.log('WordOfTheDay component rendering...');
+  console.log('Current props:', { isOpen, onClose });
+
   const [userInput, setUserInput] = useState('');
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);

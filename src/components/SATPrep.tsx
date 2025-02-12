@@ -27,6 +27,9 @@ import {
 } from '../data/questions';
 import WordOfTheDay from './WordOfTheDay';
 
+console.log('SATPrep component loading...');
+console.log('date-fns import check:', startOfDay);
+
 const playSound = (soundName: 'correct' | 'incorrect' | 'tick' | 'timeWarning' | 'timeUp', volume: number = 0.2) => {
   const soundMap = {
     correct: 'correctding',
@@ -294,7 +297,9 @@ const QUESTIONS_PER_CATEGORY = 3;
 
 // Add this utility function
 const getDailyQuestions = (): DailyQuestions => {
+  console.log('Getting daily questions...');
   const today = startOfDay(new Date()).toISOString();
+  console.log('Today date:', today);
   
   const getRandomForDay = (array: Question[], seed: number) => {
     const shuffled = [...array].sort((a, b) => {
@@ -454,6 +459,7 @@ const Confetti = () => {
 };
 
 const SATPrep = () => {
+  console.log('SATPrep component rendering...');
   const { state, dispatch } = useGame();
   const { 
     dailyQuestions, 
