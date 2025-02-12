@@ -8,10 +8,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src')
     }
-  },
-  build: {
-    rollupOptions: {
-      external: ['date-fns']
-    }
   }
-}) 
+  // Remove the build.rollupOptions section completely
+})
