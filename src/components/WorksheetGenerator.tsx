@@ -1,23 +1,102 @@
+import React from 'react';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Download, RefreshCw, Calculator, BookOpen } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Download, RefreshCw, Calculator, BookOpen, ChevronUp, ChevronDown, Eye, EyeOff, BarChart } from 'lucide-react';
 import { jsPDF } from "jspdf";
 import { cn } from '../lib/utils';
 
-type WorksheetType = 'fractions' | 'percentages' | 'simple' | 'grammar' | 'vocabulary' | 'parts-of-speech';
+type WorksheetType = 'fractions' | 'percentages' | 'simple' | 'grammar' | 'vocabulary' | 'parts-of-speech' | 'coordinate-geometry' | 'statistics' | 'volume-surface-area';
 
 interface WorksheetQuestion {
   question: string;
   answer: string;
   workSpace?: string; // Optional hint or grid type
   boxPosition?: 'numerator' | 'denominator';
+  steps?: string[];
 }
+
+interface DifficultyLevel {
+  label: string;
+  value: 'easy' | 'medium' | 'hard';
+  description: string;
+}
+
+const difficultyLevels: DifficultyLevel[] = [
+  {
+    label: 'Easy',
+    value: 'easy',
+    description: 'Basic concepts with straightforward calculations'
+  },
+  {
+    label: 'Medium',
+    value: 'medium',
+    description: 'Mixed operations and moderate complexity'
+  },
+  {
+    label: 'Hard',
+    value: 'hard',
+    description: 'Complex problems requiring multiple steps'
+  }
+];
+
+interface TopicCategory {
+  label: string;
+  value: string;
+  description: string;
+}
+
+const mathTopics: TopicCategory[] = [
+  {
+    label: 'Number Sense',
+    value: 'number-sense',
+    description: 'Integers, fractions, decimals, and percentages'
+  },
+  {
+    label: 'Algebra',
+    value: 'algebra',
+    description: 'Variables, expressions, and equations'
+  },
+  {
+    label: 'Geometry',
+    value: 'geometry',
+    description: 'Shapes, area, perimeter, and volume'
+  },
+  {
+    label: 'Coordinate Geometry',
+    value: 'coordinate-geometry',
+    description: 'Plotting points, distances, and shapes on coordinate plane'
+  },
+  {
+    label: 'Statistics',
+    value: 'statistics',
+    description: 'Mean, median, mode, range, and data analysis'
+  },
+  {
+    label: 'Volume & Surface Area',
+    value: 'volume-surface-area',
+    description: '3D shapes, volume, and surface area calculations'
+  },
+  {
+    label: 'Measurement',
+    value: 'measurement',
+    description: 'Units, conversion, and real-world applications'
+  }
+];
 
 const WorksheetGenerator = () => {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<WorksheetType | null>(null);
   const [questions, setQuestions] = useState<WorksheetQuestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('medium');
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
+  const [showSolutions, setShowSolutions] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  // Move questionTemplates here
+  const questionTemplates = {
+    // ... existing templates ...
+  } as const;
 
   const handleSubjectClick = (type: WorksheetType) => {
     setSelectedType(type);
@@ -54,18 +133,17 @@ const WorksheetGenerator = () => {
         return {
           question: `${fraction.num}/${fraction.den} = ${fraction.num * multiplier}/${fraction.den * multiplier}`,
           answer: `${fraction.num * multiplier}`,
-          boxPosition: 'numerator'
+          boxPosition: 'numerator' as const
         };
       } else {
         return {
           question: `${fraction.num}/${fraction.den} = ${fraction.num * multiplier}/${fraction.den * multiplier}`,
           answer: `${fraction.num}`,
-          boxPosition: 'numerator'
+          boxPosition: 'numerator' as const
         };
       }
     };
 
-    // Change to 20 questions
     return Array.from({ length: 20 }, () => generateEquivalentFraction());
   };
 
@@ -104,42 +182,269 @@ const WorksheetGenerator = () => {
     });
   };
 
-  const generateSimpleQuestions = (): WorksheetQuestion[] => {
-    const questionTypes = [
-      // Find the whole when given a part and fraction
-      () => {
-        const denominators = [2, 3, 4, 5, 6, 8, 10];
-        const denominator = denominators[Math.floor(Math.random() * denominators.length)];
-        const numerator = Math.floor(Math.random() * (denominator - 1)) + 1;
-        const whole = Math.floor(Math.random() * 8) + 2; // Random number between 2-10
-        const part = (whole * numerator) / denominator;
-        
-        return {
-          question: `If ${part} is ${numerator}/${denominator} of a number, what is the number?`,
-          answer: whole.toString(),
-          workSpace: "box"
-        };
+  const generateSimpleQuestions = (difficulty: string, topics: string[]): WorksheetQuestion[] => {
+    const questionTemplates = {
+      'algebra': {
+        easy: [
+          {
+            template: "One-step equations with whole numbers",
+            generate: () => {
+              const x = Math.floor(Math.random() * 10) + 2;
+              const b = Math.floor(Math.random() * 20) + 5;
+              const result = x * b;
+              return {
+                question: `A number times ${b} equals ${result}. What is the number?`,
+                answer: x.toString(),
+                workSpace: "box",
+                steps: [
+                  `Let x be the unknown number`,
+                  `Write the equation: x × ${b} = ${result}`,
+                  `Divide both sides by ${b}: x = ${result} ÷ ${b} = ${x}`
+                ]
+              } as WorksheetQuestion;
+            }
+          },
+          {
+            template: "Unit rate problems",
+            generate: () => {
+              const items = Math.floor(Math.random() * 5) + 2;
+              const cost = items * (Math.floor(Math.random() * 4) + 2);
+              return {
+                question: `If ${items} notebooks cost $${cost}, how much does one notebook cost?`,
+                answer: (cost/items).toString(),
+                workSpace: "box",
+                steps: [
+                  `To find the cost of one notebook, divide the total cost by the number of notebooks`,
+                  `$${cost} ÷ ${items} = $${cost/items}`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        medium: [
+          {
+            template: "Two-step equations",
+            generate: () => {
+              const x = Math.floor(Math.random() * 10) + 2;
+              const a = Math.floor(Math.random() * 5) + 2;
+              const b = Math.floor(Math.random() * 20) + 5;
+              const result = (x * a) + b;
+              return {
+                question: `When a number is multiplied by ${a} and then increased by ${b}, the result is ${result}. What is the number?`,
+                answer: x.toString(),
+                workSpace: "box",
+                steps: [
+                  `Let x be the unknown number`,
+                  `Write the equation: ${a}x + ${b} = ${result}`,
+                  `Subtract ${b} from both sides: ${a}x = ${result - b}`,
+                  `Divide both sides by ${a}: x = ${result - b} ÷ ${a} = ${x}`
+                ]
+              } as WorksheetQuestion;
+            }
+          },
+          {
+            template: "Ratio word problems",
+            generate: () => {
+              const ratio = Math.floor(Math.random() * 3) + 2;
+              const total = (ratio + 1) * (Math.floor(Math.random() * 4) + 3);
+              const part = Math.floor(total / (ratio + 1));
+              return {
+                question: `In a bag of marbles, there are ${ratio} times as many blue marbles as red marbles. If there are ${total} marbles in total, how many red marbles are there?`,
+                answer: part.toString(),
+                workSpace: "box",
+                steps: [
+                  `Let x be the number of red marbles`,
+                  `Then there are ${ratio}x blue marbles`,
+                  `Total marbles equation: x + ${ratio}x = ${total}`,
+                  `Simplify: ${ratio + 1}x = ${total}`,
+                  `Solve for x: x = ${total} ÷ ${ratio + 1} = ${part}`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        hard: [
+          {
+            template: "Multi-step word problems",
+            generate: () => {
+              const rate = Math.floor(Math.random() * 20) + 30;
+              const time = Math.floor(Math.random() * 2) + 2;
+              const distance = rate * time;
+              const remaining = Math.floor(Math.random() * 30) + 50;
+              return {
+                question: `A cyclist travels ${distance} miles in ${time} hours. At this same rate, how long will it take them to travel ${remaining} more miles?`,
+                answer: ((remaining / rate)).toString(),
+                workSpace: "box",
+                steps: [
+                  `Find the rate: ${distance} miles ÷ ${time} hours = ${rate} miles per hour`,
+                  `Use rate to find time: ${remaining} miles ÷ ${rate} miles per hour = ${remaining / rate} hours`
+                ]
+              } as WorksheetQuestion;
+            }
+          },
+          {
+            template: "Percent increase/decrease",
+            generate: () => {
+              const original = Math.floor(Math.random() * 50) + 50;
+              const percent = Math.floor(Math.random() * 4) + 2;
+              const increase = original * (percent * 0.1);
+              return {
+                question: `A store increases all prices by ${percent * 10}%. If a shirt originally cost $${original}, what is the amount of the increase in dollars?`,
+                answer: increase.toString(),
+                workSpace: "box",
+                steps: [
+                  `Convert ${percent * 10}% to decimal: ${percent * 0.1}`,
+                  `Multiply original price by decimal: $${original} × ${percent * 0.1} = $${increase}`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ]
       },
-      // Find the part when given the whole and fraction
-      () => {
-        const denominators = [2, 3, 4, 5, 6, 8, 10];
-        const denominator = denominators[Math.floor(Math.random() * denominators.length)];
-        const numerator = Math.floor(Math.random() * (denominator - 1)) + 1;
-        const whole = Math.floor(Math.random() * 8) + 2; // Random number between 2-10
-        const part = (whole * numerator) / denominator;
-
-        return {
-          question: `What is ${numerator}/${denominator} of ${whole}?`,
-          answer: part.toString(),
-          workSpace: "box"
-        };
+      'geometry': {
+        easy: [
+          {
+            template: "Rectangle area word problems",
+            generate: () => {
+              const width = Math.floor(Math.random() * 8) + 3;
+              const length = width + (Math.floor(Math.random() * 4) + 2);
+              const area = length * width;
+              return {
+                question: `A rectangular garden has a width of ${width} yards and a length of ${length} yards. What is its area in square yards?`,
+                answer: area.toString(),
+                workSpace: "box",
+                steps: [
+                  `Area of a rectangle = length × width`,
+                  `Area = ${length} × ${width} = ${area} square yards`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        medium: [
+          {
+            template: "Perimeter with missing side",
+            generate: () => {
+              const width = Math.floor(Math.random() * 6) + 4;
+              const length = width + (Math.floor(Math.random() * 4) + 2);
+              const perimeter = 2 * (length + width);
+              return {
+                question: `The perimeter of a rectangle is ${perimeter} feet. If the width is ${width} feet, what is the length?`,
+                answer: length.toString(),
+                workSpace: "box",
+                steps: [
+                  `Perimeter = 2 × (length + width)`,
+                  `${perimeter} = 2 × (length + ${width})`,
+                  `${perimeter} = 2length + ${2 * width}`,
+                  `2length = ${perimeter} - ${2 * width}`,
+                  `length = ${length}`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        hard: [
+          {
+            template: "Area and cost problems",
+            generate: () => {
+              const length = Math.floor(Math.random() * 10) + 8;
+              const width = Math.floor(Math.random() * 6) + 5;
+              const area = length * width;
+              const costPerUnit = Math.floor(Math.random() * 5) + 3;
+              return {
+                question: `A rectangular floor measures ${length} feet by ${width} feet. If carpet costs $${costPerUnit} per square foot, how much will it cost to carpet the entire floor?`,
+                answer: (area * costPerUnit).toString(),
+                workSpace: "box",
+                steps: [
+                  `Find the area: ${length} × ${width} = ${area} square feet`,
+                  `Multiply area by cost per square foot: ${area} × $${costPerUnit} = $${area * costPerUnit}`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ]
+      },
+      'measurement': {
+        easy: [
+          {
+            template: "Simple unit conversion",
+            generate: () => {
+              const feet = Math.floor(Math.random() * 20) + 10;
+              return {
+                question: `Convert ${feet} feet to inches. (Hint: 1 foot = 12 inches)`,
+                answer: (feet * 12).toString(),
+                workSpace: "box",
+                steps: [
+                  `Multiply feet by 12 to convert to inches`,
+                  `${feet} × 12 = ${feet * 12} inches`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        medium: [
+          {
+            template: "Rate and time problems",
+            generate: () => {
+              const rate = Math.floor(Math.random() * 15) + 25;
+              const time = Math.floor(Math.random() * 3) + 2;
+              return {
+                question: `If a car travels at ${rate} miles per hour, how far will it travel in ${time} hours?`,
+                answer: (rate * time).toString(),
+                workSpace: "box",
+                steps: [
+                  `Distance = rate × time`,
+                  `Distance = ${rate} × ${time} = ${rate * time} miles`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ],
+        hard: [
+          {
+            template: "Complex unit conversion",
+            generate: () => {
+              const gallons = Math.floor(Math.random() * 10) + 5;
+              const cups = gallons * 16;
+              return {
+                question: `Convert ${gallons} gallons to cups. (Hints: 1 gallon = 4 quarts, 1 quart = 2 pints, 1 pint = 2 cups)`,
+                answer: cups.toString(),
+                workSpace: "box",
+                steps: [
+                  `First convert gallons to quarts: ${gallons} × 4 = ${gallons * 4} quarts`,
+                  `Then convert quarts to pints: ${gallons * 4} × 2 = ${gallons * 8} pints`,
+                  `Finally convert pints to cups: ${gallons * 8} × 2 = ${cups} cups`
+                ]
+              } as WorksheetQuestion;
+            }
+          }
+        ]
       }
-    ];
+    } as const;
 
-    return Array.from({ length: 12 }, () => {
-      const typeIndex = Math.floor(Math.random() * questionTypes.length);
-      return questionTypes[typeIndex]();
+    let questions: WorksheetQuestion[] = [];
+    const questionsPerTopic = Math.ceil(20 / topics.length);
+
+    topics.forEach(topic => {
+      const topicTemplates = questionTemplates[topic as keyof typeof questionTemplates];
+      if (topicTemplates) {
+        const difficultyTemplates = topicTemplates[difficulty as keyof typeof topicTemplates];
+        if (difficultyTemplates) {
+          for (let i = 0; i < questionsPerTopic; i++) {
+            const template = difficultyTemplates[Math.floor(Math.random() * difficultyTemplates.length)];
+            questions.push(template.generate());
+          }
+        }
+      }
     });
+
+    // If we don't have enough questions, fill with algebra questions
+    if (questions.length === 0) {
+      const template = questionTemplates['algebra'].medium[0];
+      questions = Array.from({ length: 20 }, () => template.generate());
+    }
+
+    return questions.slice(0, 20);
   };
 
   const generateGrammarQuestions = (): WorksheetQuestion[] => {
@@ -259,54 +564,124 @@ const WorksheetGenerator = () => {
   const generateVocabularyQuestions = (): WorksheetQuestion[] => {
     const vocabularyWords = [
       { 
-        word: 'ubiquitous',
-        correct: 'omnipresent',
-        wrong: ['rare', 'limited']
+        word: 'surreptitious',
+        correct: 'secretive',
+        wrong: ['obvious', 'noticeable'],
+        hint: 'Done in a way to avoid being noticed'
       },
       { 
-        word: 'tenacious',
-        correct: 'persistent',
-        wrong: ['yielding', 'weak']
+        word: 'cacophony',
+        correct: 'discord',
+        wrong: ['harmony', 'melody'],
+        hint: 'A harsh mixture of sounds'
+      },
+      { 
+        word: 'paradigm',
+        correct: 'model',
+        wrong: ['exception', 'deviation'],
+        hint: 'A typical pattern or example'
       },
       { 
         word: 'ephemeral',
-        correct: 'fleeting',
-        wrong: ['lasting', 'permanent']
+        correct: 'transient',
+        wrong: ['permanent', 'enduring'],
+        hint: 'Lasting for a very short time'
+      },
+      { 
+        word: 'ambivalent',
+        correct: 'uncertain',
+        wrong: ['decisive', 'determined'],
+        hint: 'Having mixed feelings about something'
+      },
+      { 
+        word: 'fastidious',
+        correct: 'meticulous',
+        wrong: ['careless', 'sloppy'],
+        hint: 'Very attentive to detail'
+      },
+      { 
+        word: 'enigmatic',
+        correct: 'mysterious',
+        wrong: ['obvious', 'clear'],
+        hint: 'Difficult to interpret or understand'
+      },
+      { 
+        word: 'precarious',
+        correct: 'unstable',
+        wrong: ['secure', 'safe'],
+        hint: 'Not securely held in position'
+      },
+      { 
+        word: 'circumvent',
+        correct: 'bypass',
+        wrong: ['confront', 'face'],
+        hint: 'Find a way around an obstacle'
+      },
+      { 
+        word: 'paradoxical',
+        correct: 'contradictory',
+        wrong: ['logical', 'consistent'],
+        hint: 'Seemingly absurd but true'
+      },
+      { 
+        word: 'quintessential',
+        correct: 'archetypal',
+        wrong: ['unusual', 'atypical'],
+        hint: 'Representing the most perfect example'
+      },
+      { 
+        word: 'ubiquitous',
+        correct: 'omnipresent',
+        wrong: ['rare', 'scarce'],
+        hint: 'Found everywhere'
+      },
+      { 
+        word: 'clandestine',
+        correct: 'covert',
+        wrong: ['public', 'open'],
+        hint: 'Done in secret'
       },
       { 
         word: 'pragmatic',
         correct: 'practical',
-        wrong: ['idealistic', 'fanciful']
+        wrong: ['idealistic', 'theoretical'],
+        hint: 'Dealing with things sensibly'
       },
       { 
-        word: 'benevolent',
-        correct: 'kind',
-        wrong: ['cruel', 'evil']
+        word: 'arbitrary',
+        correct: 'random',
+        wrong: ['planned', 'reasoned'],
+        hint: 'Based on chance rather than reason'
       },
       { 
-        word: 'meticulous',
-        correct: 'precise',
-        wrong: ['careless', 'sloppy']
+        word: 'peripheral',
+        correct: 'marginal',
+        wrong: ['central', 'essential'],
+        hint: 'On the outer edge'
       },
       { 
-        word: 'verbose',
-        correct: 'wordy',
-        wrong: ['concise', 'brief']
+        word: 'ambiguous',
+        correct: 'vague',
+        wrong: ['clear', 'definite'],
+        hint: 'Open to more than one interpretation'
       },
       { 
-        word: 'audacious',
-        correct: 'bold',
-        wrong: ['timid', 'fearful']
+        word: 'tenuous',
+        correct: 'flimsy',
+        wrong: ['strong', 'solid'],
+        hint: 'Very weak or slight'
       },
       { 
-        word: 'diligent',
-        correct: 'hardworking',
-        wrong: ['lazy', 'negligent']
+        word: 'esoteric',
+        correct: 'obscure',
+        wrong: ['common', 'familiar'],
+        hint: 'Intended for a select few'
       },
       { 
-        word: 'eloquent',
-        correct: 'articulate',
-        wrong: ['inarticulate', 'awkward']
+        word: 'analogous',
+        correct: 'comparable',
+        wrong: ['different', 'unrelated'],
+        hint: 'Similar in some respects'
       }
     ];
 
@@ -314,7 +689,7 @@ const WorksheetGenerator = () => {
       const word = vocabularyWords[Math.floor(Math.random() * vocabularyWords.length)];
       
       return {
-        question: `${word.word}\n\na) ${word.correct}   b) ${word.wrong[0]}   c) ${word.wrong[1]}`,
+        question: `${word.word}\n\na) ${word.correct}   b) ${word.wrong[0]}   c) ${word.wrong[1]}\n\nHint: ${word.hint}`,
         answer: 'a',  // Always making first option correct
         workSpace: "none"
       };
@@ -365,6 +740,54 @@ const WorksheetGenerator = () => {
     });
   };
 
+  const generateCoordinateGeometryQuestions = (): WorksheetQuestion[] => {
+    const templates = questionTemplates['coordinate-geometry'];
+    const questions: WorksheetQuestion[] = [];
+    
+    // Use selected difficulty level instead of mixing
+    const difficultyTemplates = templates[selectedDifficulty as keyof typeof templates];
+    if (difficultyTemplates) {
+      for (let i = 0; i < 20; i++) {
+        const template = difficultyTemplates[Math.floor(Math.random() * difficultyTemplates.length)];
+        questions.push(template.generate());
+      }
+    }
+
+    return questions;
+  };
+
+  const generateStatisticsQuestions = (): WorksheetQuestion[] => {
+    const templates = questionTemplates['statistics'];
+    const questions: WorksheetQuestion[] = [];
+    
+    // Use selected difficulty level instead of mixing
+    const difficultyTemplates = templates[selectedDifficulty as keyof typeof templates];
+    if (difficultyTemplates) {
+      for (let i = 0; i < 20; i++) {
+        const template = difficultyTemplates[Math.floor(Math.random() * difficultyTemplates.length)];
+        questions.push(template.generate());
+      }
+    }
+
+    return questions;
+  };
+
+  const generateVolumeSurfaceAreaQuestions = (): WorksheetQuestion[] => {
+    const templates = questionTemplates['volume-surface-area'];
+    const questions: WorksheetQuestion[] = [];
+    
+    // Use selected difficulty level instead of mixing
+    const difficultyTemplates = templates[selectedDifficulty as keyof typeof templates];
+    if (difficultyTemplates) {
+      for (let i = 0; i < 20; i++) {
+        const template = difficultyTemplates[Math.floor(Math.random() * difficultyTemplates.length)];
+        questions.push(template.generate());
+      }
+    }
+
+    return questions;
+  };
+
   const generateWorksheet = () => {
     setIsGenerating(true);
     setTimeout(() => {
@@ -378,7 +801,7 @@ const WorksheetGenerator = () => {
           newQuestions = generatePercentageQuestions();
           break;
         case 'simple':
-          newQuestions = generateSimpleQuestions();
+          newQuestions = generateSimpleQuestions(selectedDifficulty, selectedTopics);
           break;
         case 'grammar':
           newQuestions = generateGrammarQuestions();
@@ -388,6 +811,15 @@ const WorksheetGenerator = () => {
           break;
         case 'parts-of-speech':
           newQuestions = generatePartsOfSpeechQuestions();
+          break;
+        case 'coordinate-geometry':
+          newQuestions = generateCoordinateGeometryQuestions();
+          break;
+        case 'statistics':
+          newQuestions = generateStatisticsQuestions();
+          break;
+        case 'volume-surface-area':
+          newQuestions = generateVolumeSurfaceAreaQuestions();
           break;
         // Add other worksheet types here
       }
@@ -400,124 +832,95 @@ const WorksheetGenerator = () => {
   const generatePDF = () => {
     const pdf = new jsPDF();
     const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
     const margin = 20;
-    let yPosition = 20;
+    let yPosition = margin;
 
-    // Set background to white (default in jsPDF)
-    pdf.setFillColor(255, 255, 255);
+    // Set up consistent styling
+    const titleSize = 16;
+    const questionSize = 12;
+    const workspaceHeight = 30;
+    const questionsPerPage = 5;
+    const questionSpacing = 8;
 
-    // Add title
-    pdf.setFontSize(20);
-    const title = selectedType === 'simple' ? 'Word Problems' : 
-      `${selectedType?.charAt(0).toUpperCase() + selectedType?.slice(1)} Practice`;
+    // Add header
+    pdf.setFontSize(titleSize);
+    pdf.setFont('helvetica', 'bold');
+    const title = selectedType ? `${selectedType.charAt(0).toUpperCase() + selectedType.slice(1)} Practice` : 'Math Practice';
     pdf.text(title, pageWidth / 2, yPosition, { align: 'center' });
     
-    // Add date and name fields
-    yPosition += 15;
-    pdf.setFontSize(12);
-    pdf.text(`Name: ________________________________    Date: ________________`, margin, yPosition);
+    // Add metadata line
+    yPosition += 10;
+    pdf.setFontSize(10);
+    pdf.setFont('helvetica', 'normal');
+    const date = new Date().toLocaleDateString();
+    pdf.text(`Name: ________________________________    Date: ${date}`, margin, yPosition);
     
-    // Start questions
-    yPosition += 25;
-    pdf.setFontSize(14);
-
-    if (selectedType === 'simple' || selectedType === 'percentages') {
-      // Word problems and percentages - two columns
-      const colWidth = (pageWidth - (margin * 3)) / 2;
-      questions.forEach((q, i) => {
-        const isSecondColumn = i % 2 === 1;
-        const xPosition = isSecondColumn ? margin + colWidth + margin : margin;
-        
-        if (i % 2 === 0 && i > 0) {
-          yPosition += 35;
-        }
-        
-        if (yPosition > 250) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-
-        pdf.text(`${i + 1}. ${q.question}`, xPosition, yPosition);
-        pdf.rect(xPosition, yPosition + 5, 40, 15);
-      });
-    } else if (selectedType === 'fractions') {
-      // Fraction problems - two columns
-      let currentColumn = 0;
-      const colWidth = (pageWidth - (margin * 3)) / 2;
-
-      questions.forEach((q) => {
-        const xPosition = margin + (currentColumn * (colWidth + margin));
-        const [left, right] = q.question.split(' = ');
-        const [leftNum, leftDen] = left.split('/');
-        const [rightNum, rightDen] = right.split('/');
-        
-        if (q.boxPosition === 'numerator') {
-          pdf.rect(xPosition + 20, yPosition - 5, 15, 10);
-          pdf.text('/', xPosition + 40, yPosition);
-          pdf.text(leftDen, xPosition + 45, yPosition);
-          pdf.text('=', xPosition + 60, yPosition);
-          pdf.text(rightNum, xPosition + 75, yPosition);
-          pdf.text('/', xPosition + 85, yPosition);
-          pdf.text(rightDen, xPosition + 90, yPosition);
-        }
-        
-        currentColumn++;
-        if (currentColumn === 2) {
-          currentColumn = 0;
-          yPosition += 30;
-        }
-      });
-    } else {
-      // Language Arts worksheets (vocabulary, grammar, parts of speech)
-      const colWidth = (pageWidth - (margin * 3)) / 2;
-      questions.forEach((q, i) => {
-        const isSecondColumn = i % 2 === 1;
-        const xPosition = isSecondColumn ? margin + colWidth + margin : margin;
-        
-        if (i % 2 === 0 && i > 0) {
-          yPosition += 40;
-        }
-        
-        if (yPosition > 250) {
-          pdf.addPage();
-          yPosition = 20;
-        }
-
-        // Split long questions into multiple lines
-        const maxWidth = colWidth - 10;
-        const lines = pdf.splitTextToSize(`${i + 1}. ${q.question}`, maxWidth);
-        
-        // Add each line of the question
-        lines.forEach((line: string, lineIndex: number) => {
-          // Check if line contains bold text (marked with **)
-          if (line.includes('**')) {
-            const parts = line.split('**');
-            let xOffset = 0;
-            parts.forEach((part, idx) => {
-              if (idx % 2 === 1) {
-                // Bold text
-                pdf.setFont('helvetica', 'bold');
-              } else {
-                pdf.setFont('helvetica', 'normal');
-              }
-              pdf.text(part, xPosition + xOffset, yPosition + (lineIndex * 7));
-              xOffset += pdf.getTextWidth(part);
-            });
-          } else {
-            pdf.setFont('helvetica', 'normal');
-            pdf.text(line, xPosition, yPosition + (lineIndex * 7));
-          }
-        });
-
-        // Don't add answer boxes for vocabulary questions
-        if (selectedType !== 'vocabulary') {
-          const questionHeight = lines.length * 7;
-          pdf.rect(xPosition, yPosition + questionHeight + 2, 40, 15);
-        }
-      });
+    // Add difficulty level if applicable
+    if (selectedDifficulty) {
+      yPosition += 6;
+      pdf.text(`Difficulty: ${selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}`, margin, yPosition);
     }
 
-    pdf.save(`${selectedType}_practice.pdf`);
+    yPosition += 15;
+    pdf.setFontSize(questionSize);
+
+    // Generate questions
+    questions.forEach((question, index) => {
+      // Check if we need a new page
+      if (yPosition > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+
+      // Question number and text
+      pdf.setFont('helvetica', 'bold');
+      const questionNum = `${index + 1}. `;
+      const questionWidth = pdf.getTextWidth(questionNum);
+      pdf.text(questionNum, margin, yPosition);
+      
+      // Question text with word wrap
+      pdf.setFont('helvetica', 'normal');
+      const maxWidth = pageWidth - (2 * margin) - questionWidth;
+      const splitQuestion = pdf.splitTextToSize(question.question, maxWidth);
+      
+      // Add each line of the question
+      splitQuestion.forEach((line: string, lineIndex: number) => {
+        const xPosition = lineIndex === 0 ? margin + questionWidth : margin + questionWidth;
+        pdf.text(line, xPosition, yPosition + (lineIndex * 6));
+      });
+
+      // Move position below question text
+      yPosition += (splitQuestion.length * 6) + questionSpacing;
+
+      // Add workspace box if needed
+      if (question.workSpace === "box") {
+        // Draw workspace box
+        pdf.rect(margin, yPosition, pageWidth - (2 * margin), workspaceHeight);
+        
+        // Add "Work Space" label
+        pdf.setFontSize(8);
+        pdf.text("Work Space", margin + 2, yPosition + 6);
+        pdf.setFontSize(questionSize);
+        
+        yPosition += workspaceHeight + questionSpacing;
+      }
+
+      // Add extra spacing between questions
+      yPosition += 10;
+    });
+
+    // Add page numbers
+    const pageCount = pdf.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(10);
+      pdf.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - 10, { align: 'right' });
+    }
+
+    // Save the PDF
+    const filename = `${selectedType || 'math'}_practice_${selectedDifficulty || 'mixed'}.pdf`;
+    pdf.save(filename);
   };
 
   return (
@@ -608,6 +1011,31 @@ const WorksheetGenerator = () => {
             </button>
           </div>
         </div>
+
+        {/* Difficulty Selection - Now visible in main UI */}
+        <div className="mt-8 bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700/50">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-xl font-bold text-emerald-400">Difficulty Level</h3>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            {difficultyLevels.map(level => (
+              <button
+                key={level.value}
+                onClick={() => setSelectedDifficulty(level.value)}
+                className={cn(
+                  "p-4 rounded-lg transition-all",
+                  selectedDifficulty === level.value
+                    ? "bg-emerald-600/50 text-white ring-2 ring-emerald-500"
+                    : "bg-gray-700/50 hover:bg-gray-700/80 text-gray-300"
+                )}
+              >
+                <div className="text-sm font-medium">{level.label}</div>
+                <div className="text-xs mt-1 opacity-75">{level.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="mt-8 flex items-center justify-between">
@@ -641,7 +1069,7 @@ const WorksheetGenerator = () => {
         </div>
       )}
 
-      {/* Preview Section */}
+      {/* Preview Section with Enhanced Features */}
       {questions.length > 0 && !isGenerating && (
         <div className="mt-8 space-y-6">
           <div className="bg-white rounded-xl p-8 border shadow-xl max-h-[800px] overflow-y-auto">
@@ -654,47 +1082,81 @@ const WorksheetGenerator = () => {
               <div className="text-sm">
                 Name: ________________________________    Date: ________________
               </div>
+              <div className="text-sm text-gray-500 mt-2">
+                Difficulty: {selectedDifficulty.charAt(0).toUpperCase() + selectedDifficulty.slice(1)}
+              </div>
             </div>
 
-            {/* Questions */}
-            <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            {/* Questions with Solutions Toggle */}
+            <div className="flex justify-end mb-4">
+              <button
+                onClick={() => setShowSolutions(!showSolutions)}
+                className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
+              >
+                {showSolutions ? (
+                  <>
+                    <EyeOff className="w-4 h-4" />
+                    Hide Solutions
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" />
+                    Show Solutions
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Questions Grid */}
+            <div className="grid grid-cols-2 gap-x-8 gap-y-6">
               {questions.map((q, i) => (
-                <div key={i} className="text-xs text-gray-900">
-                  {selectedType === 'fractions' ? (
-                    // Special formatting for fraction problems
-                    <div className="flex items-center gap-2">
-                      <span>{i + 1}.</span>
-                      {q.question.split(' = ').map((part, idx) => (
-                        <span key={idx} className="flex items-center gap-1">
-                          {idx > 0 && <span>=</span>}
-                          {part.split('/').map((num, numIdx) => (
-                            <span key={numIdx} className="relative">
-                              {numIdx === 0 ? (
-                                <div className="border-b border-gray-400 pb-1">{num}</div>
-                              ) : (
-                                num
-                              )}
-                            </span>
-                          ))}
-                        </span>
-                      ))}
-                      <div className="w-12 h-6 border border-gray-300"></div>
-                    </div>
-                  ) : (
-                    // Standard formatting for other problems
-                    <div>
-                      <div>{i + 1}. {q.question}</div>
-                      {q.workSpace && (
-                        <div className="mt-1 h-6 border border-gray-200"></div>
-                      )}
-                    </div>
+                <motion.div
+                  key={i}
+                  className="text-gray-900 p-4 rounded-lg border border-gray-200 hover:border-emerald-500 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <div className="font-medium mb-2">
+                    {i + 1}. {q.question}
+                  </div>
+                  
+                  {/* Work Space */}
+                  {q.workSpace && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded border border-gray-200 min-h-[60px]" />
                   )}
-                </div>
+
+                  {/* Solution Steps */}
+                  {showSolutions && q.steps && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="mt-3 pt-3 border-t border-gray-200"
+                    >
+                      <div className="text-sm text-emerald-600 font-medium mb-1">Solution:</div>
+                      {q.steps.map((step, idx) => (
+                        <div key={idx} className="text-sm text-gray-600 ml-2">
+                          {idx + 1}. {step}
+                        </div>
+                      ))}
+                      <div className="text-sm font-medium text-emerald-600 mt-2">
+                        Answer: {q.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
               ))}
             </div>
           </div>
 
-          <div className="flex justify-end">
+          {/* Action Buttons */}
+          <div className="flex justify-between">
+            <button
+              onClick={handleGenerateClick}
+              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-medium transition-colors"
+            >
+              <RefreshCw className="w-5 h-5" />
+              Generate New
+            </button>
+            
             <button
               onClick={generatePDF}
               className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white font-medium transition-colors"

@@ -835,57 +835,68 @@ const SATPrep = () => {
       </button>
 
       {/* Hamburger Menu */}
-      <div className="absolute top-4 right-4 z-50">
+      <div className="absolute top-4 right-4 z-50 flex items-center space-x-4">
+        {/* Grade Level Indicator */}
+        <div className="relative group">
+          <div className="px-3 py-1.5 bg-purple-500/20 text-purple-400 rounded-full border border-purple-500/30 text-sm font-medium">
+            6th Grade
+          </div>
+          {/* Tooltip */}
+          <div className="absolute -bottom-12 right-0 w-48 px-3 py-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 text-xs text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
+            Other grade levels coming soon
+          </div>
+        </div>
+
         <button 
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           className="p-3 hover:bg-white/10 rounded-lg transition-colors"
         >
           <img src="/ham.png" alt="Menu" className="w-12 h-12" />
         </button>
-        
-        {isMenuOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-white/10">
-            {/* Points Display */}
-            <div className="px-4 py-2 border-b border-white/10">
-              <div className="text-yellow-400 font-bold">Points: {totalPoints}</div>
-            </div>
-            
-            <button
-              onClick={() => {
-                setShowAboutModal(true);
-                setIsMenuOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 border-b border-white/10"
-            >
-              About WizKid
-            </button>
-            
-            <button
-              onClick={() => {
-                setShowFAQModal(true);
-                setIsMenuOpen(false);
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 border-b border-white/10"
-            >
-              FAQ
-            </button>
-
-            {/* Reset Points Button */}
-            <button
-              onClick={() => {
-                if (confirm('Are you sure you want to reset your points? This cannot be undone.')) {
-                  setTotalPoints(0);
-                  savePoints(0);
-                  setIsMenuOpen(false);
-                }
-              }}
-              className="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
-            >
-              Reset Points
-            </button>
-          </div>
-        )}
       </div>
+
+      {isMenuOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-white/10">
+          {/* Points Display */}
+          <div className="px-4 py-2 border-b border-white/10">
+            <div className="text-yellow-400 font-bold">Points: {totalPoints}</div>
+          </div>
+          
+          <button
+            onClick={() => {
+              setShowAboutModal(true);
+              setIsMenuOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 border-b border-white/10"
+          >
+            About WizKid
+          </button>
+          
+          <button
+            onClick={() => {
+              setShowFAQModal(true);
+              setIsMenuOpen(false);
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-white/10 text-gray-300 border-b border-white/10"
+          >
+            FAQ
+          </button>
+
+          {/* Reset Points Button */}
+          <button
+            onClick={() => {
+              if (confirm('Are you sure you want to reset your points? This cannot be undone.')) {
+                setTotalPoints(0);
+                savePoints(0);
+                setIsMenuOpen(false);
+              }
+            }}
+            className="w-full text-left px-4 py-2 hover:bg-red-500/20 text-red-400"
+          >
+            Reset Points
+          </button>
+        </div>
+      )}
 
       {/* About Modal with expanded description */}
       {showAboutModal && (
@@ -1167,10 +1178,43 @@ const SATPrep = () => {
       {/* Daily Challenge Modal */}
       {showDailyChallenge && currentQuestion && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+          {/* Rotating diagonal stripes background - slower rotation */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div 
+              className="absolute inset-[-100%] opacity-[0.07]"
+              style={{
+                background: `repeating-linear-gradient(
+                  45deg,
+                  #4F46E5 0px,
+                  #4F46E5 2px,
+                  transparent 2px,
+                  transparent 20px,
+                  #10B981 20px,
+                  #10B981 22px,
+                  transparent 22px,
+                  transparent 40px
+                )`,
+                animation: 'rotate 120s linear infinite', // Slowed from 40s to 120s
+                transformOrigin: 'center',
+                backgroundSize: '200% 200%',
+              }}
+            />
+          </div>
+
+          {/* Audio element for background music */}
+          <audio 
+            id="gameMusic" 
+            loop 
+            preload="auto"
+            className="hidden"
+          >
+            <source src="/music/game-show.mp3" type="audio/mpeg" />
+          </audio>
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="bg-gray-800 rounded-xl max-w-2xl w-full p-8"
+            className="bg-gray-800/90 backdrop-blur rounded-xl max-w-2xl w-full p-8 relative z-10"
           >
             <div className="space-y-6">
               {/* Progress and Score Row */}
@@ -2009,6 +2053,18 @@ const SATPrep = () => {
         isOpen={showFeedback}
         onClose={() => setShowFeedback(false)}
       />
+
+      {/* Add this keyframe animation to your global CSS or as a style tag */}
+      <style jsx global>{`
+        @keyframes rotate {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 };

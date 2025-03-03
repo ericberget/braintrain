@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Save, Trash2, Edit2, ChevronLeft, ChevronRight, Library } from 'lucide-react';
+import { Plus, X, Save, Trash2, Edit2, ChevronLeft, ChevronRight, Library, Maximize2, Minimize2, RotateCcw } from 'lucide-react';
 
 interface Flashcard {
   id: string;
@@ -107,6 +107,24 @@ const FlashcardCreator = () => {
     if (currentSet?.id === setId) {
       setCurrentSet(null);
     }
+  };
+
+  const deleteCard = (cardId: string) => {
+    if (!currentSet) return;
+
+    const updatedSet = {
+      ...currentSet,
+      cards: currentSet.cards.filter(card => card.id !== cardId)
+    };
+
+    setCurrentSet(updatedSet);
+    setFlashcardSets(sets => {
+      const updated = sets.map(set => 
+        set.id === currentSet.id ? updatedSet : set
+      );
+      saveToLocalStorage(updated);
+      return updated;
+    });
   };
 
   return (
@@ -362,116 +380,193 @@ interface FlashcardPreviewProps {
 const FlashcardPreview = ({ set, onClose }: FlashcardPreviewProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') previousCard();
+      if (e.key === 'ArrowRight') nextCard();
+      if (e.key === ' ') setIsFlipped(!isFlipped);
+      if (e.key === 'Escape' && isFullscreen) setIsFullscreen(false);
+      if (e.key === 'f') setIsFullscreen(!isFullscreen);
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isFlipped, currentIndex, isFullscreen]);
+
+  useEffect(() => {
+    setProgress((currentIndex / (set.cards.length - 1)) * 100);
+  }, [currentIndex, set.cards.length]);
 
   const nextCard = () => {
     if (currentIndex < set.cards.length - 1) {
-      // First ensure card is showing front
       setIsFlipped(false);
-      // Wait for flip animation to complete before changing card
       setTimeout(() => {
         setCurrentIndex(currentIndex + 1);
-      }, 300); // Half of the flip animation duration
+      }, 300);
     }
   };
 
   const previousCard = () => {
     if (currentIndex > 0) {
-      // First ensure card is showing front
       setIsFlipped(false);
-      // Wait for flip animation to complete before changing card
       setTimeout(() => {
         setCurrentIndex(currentIndex - 1);
-      }, 300); // Half of the flip animation duration
+      }, 300);
     }
   };
 
+  const resetStudy = () => {
+    setCurrentIndex(0);
+    setIsFlipped(false);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-2xl font-brandon font-black text-white">{set.name}</h3>
-        <div className="flex gap-4">
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
-      </div>
-
-      {set.cards.length > 0 ? (
-        <>
-          <div className="flex justify-center items-center gap-4">
-            <button
-              onClick={previousCard}
-              disabled={currentIndex === 0}
-              className="p-2 text-gray-400 hover:text-white disabled:opacity-50"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-
-            <motion.div
-              className="w-96 h-64 cursor-pointer perspective-1000"
-              onClick={() => setIsFlipped(!isFlipped)}
-            >
-              <motion.div
-                initial={false}
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ duration: 0.6 }}
-                className="relative w-full h-full preserve-3d"
-                style={{
-                  transformStyle: 'preserve-3d',
-                }}
+    <AnimatePresence>
+      <motion.div 
+        className={`${isFullscreen ? 'fixed inset-0 bg-gray-900/95 z-50' : ''} transition-all duration-300`}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        <div className={`space-y-6 ${isFullscreen ? 'p-8 h-screen flex flex-col' : ''}`}>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-2xl font-brandon font-black text-white">{set.name}</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Card {currentIndex + 1} of {set.cards.length}
+              </p>
+            </div>
+            <div className="flex gap-4 items-center">
+              <button
+                onClick={() => setIsFullscreen(!isFullscreen)}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800/50"
+                title={isFullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
               >
-                {/* Front of card */}
-                <div
-                  className={`absolute w-full h-full rounded-xl p-6 flex items-center justify-center text-center bg-cover bg-center border-2 border-emerald-500 shadow-2xl shadow-emerald-500/20`}
-                  style={{ 
-                    backgroundImage: 'url(/paper.jpeg)',
-                    backfaceVisibility: 'hidden',
-                  }}
-                >
-                  <p className="text-2xl text-gray-800 font-brandon font-black">
-                    {set.cards[currentIndex].front}
-                  </p>
-                </div>
-
-                {/* Back of card */}
-                <div
-                  className={`absolute w-full h-full rounded-xl p-6 flex items-center justify-center text-center bg-cover bg-center border-2 border-emerald-500 shadow-2xl shadow-emerald-500/20`}
-                  style={{ 
-                    backgroundImage: 'url(/paper.jpeg)',
-                    backfaceVisibility: 'hidden',
-                    transform: 'rotateY(180deg)',
-                    WebkitTransform: 'rotateY(180deg)',
-                  }}
-                >
-                  <p className="text-2xl text-gray-800 font-brandon font-black">
-                    {set.cards[currentIndex].back}
-                  </p>
-                </div>
-              </motion.div>
-            </motion.div>
-
-            <button
-              onClick={nextCard}
-              disabled={currentIndex === set.cards.length - 1}
-              className="p-2 text-gray-400 hover:text-white disabled:opacity-50"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+                {isFullscreen ? (
+                  <Minimize2 className="w-5 h-5" />
+                ) : (
+                  <Maximize2 className="w-5 h-5" />
+                )}
+              </button>
+              <button
+                onClick={resetStudy}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800/50"
+                title="Reset study session"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+              <button
+                onClick={onClose}
+                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-gray-800/50"
+                title="Close (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
+
+          {/* Progress bar */}
+          <div className="w-full bg-gray-700 h-1 rounded-full overflow-hidden">
+            <motion.div 
+              className="h-full bg-emerald-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+
+          {set.cards.length > 0 ? (
+            <div className={`flex justify-center items-center gap-4 ${isFullscreen ? 'flex-1' : ''}`}>
+              <motion.button
+                onClick={previousCard}
+                disabled={currentIndex === 0}
+                className="p-4 text-gray-400 hover:text-white disabled:opacity-50 rounded-full hover:bg-gray-800/50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </motion.button>
+
+              <motion.div
+                className={`${isFullscreen ? 'w-[600px] h-[400px]' : 'w-96 h-64'} cursor-pointer perspective-1000`}
+                onClick={() => setIsFlipped(!isFlipped)}
+                whileHover={{ scale: 1.02 }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div
+                  initial={false}
+                  animate={{ rotateY: isFlipped ? 180 : 0 }}
+                  transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                  className="relative w-full h-full preserve-3d"
+                  style={{ transformStyle: 'preserve-3d' }}
+                >
+                  {/* Front of card */}
+                  <div
+                    className={`absolute w-full h-full rounded-xl p-6 flex items-center justify-center text-center bg-cover bg-center 
+                      border-[8px] border-emerald-500/80 backdrop-blur-sm
+                      shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)]
+                      transition-all duration-300`}
+                    style={{ 
+                      backgroundImage: 'url(/paper.jpeg)',
+                      backfaceVisibility: 'hidden',
+                    }}
+                  >
+                    <p className="text-3xl text-gray-800 font-brandon font-black">
+                      {set.cards[currentIndex].front}
+                    </p>
+                  </div>
+
+                  {/* Back of card */}
+                  <div
+                    className={`absolute w-full h-full rounded-xl p-6 flex items-center justify-center text-center bg-cover bg-center 
+                      border-[8px] border-emerald-500/80 backdrop-blur-sm
+                      shadow-[0_20px_60px_-15px_rgba(16,185,129,0.3)]
+                      transition-all duration-300`}
+                    style={{ 
+                      backgroundImage: 'url(/paper.jpeg)',
+                      backfaceVisibility: 'hidden',
+                      transform: 'rotateY(180deg)',
+                      WebkitTransform: 'rotateY(180deg)',
+                    }}
+                  >
+                    <p className="text-3xl text-gray-800 font-brandon font-black">
+                      {set.cards[currentIndex].back}
+                    </p>
+                  </div>
+                </motion.div>
+              </motion.div>
+
+              <motion.button
+                onClick={nextCard}
+                disabled={currentIndex === set.cards.length - 1}
+                className="p-4 text-gray-400 hover:text-white disabled:opacity-50 rounded-full hover:bg-gray-800/50"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </motion.button>
+            </div>
+          ) : (
+            <div className="text-center text-gray-400">
+              No cards in this set yet. Add some cards to preview.
+            </div>
+          )}
 
           <div className="text-center text-gray-400">
-            Click card to flip • {currentIndex + 1} of {set.cards.length}
+            <kbd className="px-2 py-1 bg-gray-800 rounded-md text-sm mr-1">←</kbd>
+            <kbd className="px-2 py-1 bg-gray-800 rounded-md text-sm mr-1">→</kbd>
+            to navigate • 
+            <kbd className="px-2 py-1 bg-gray-800 rounded-md text-sm mx-1">Space</kbd>
+            to flip • 
+            <kbd className="px-2 py-1 bg-gray-800 rounded-md text-sm mx-1">F</kbd>
+            for fullscreen
           </div>
-        </>
-      ) : (
-        <div className="text-center text-gray-400">
-          No cards in this set yet. Add some cards to preview.
         </div>
-      )}
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Brain, Link, Puzzle, X } from 'lucide-react';
+import { Brain, Link, Puzzle, X, Grid, Globe, Flag } from 'lucide-react';
+import CrosswordPuzzle from './CrosswordPuzzle';
+import GeographyCrossword from './GeographyCrossword';
+import CitizenshipQuiz from './CitizenshipQuiz';
+import CitizenshipCrossword from './CitizenshipCrossword';
 
 interface WordPair {
   word1: string;
@@ -206,7 +210,172 @@ const logicPuzzles: LogicPuzzle[] = [
   }
 ];
 
-const wordAssociations: WordAssociation[] = [
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const newArray = [...array];
+  for (let i = newArray.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+  }
+  return newArray;
+};
+
+const wordAssociations: WordAssociation[] = shuffleArray([
+  {
+    firstPair: {
+      word1: "Catalyst",
+      word2: "Reaction"
+    },
+    secondPair: {
+      word1: "Stimulus",
+      options: ["Response", "Nerve", "Brain", "Synapse"],
+      correct: "Response"
+    },
+    hint: "Think about cause and effect relationships in science",
+    explanation: "A catalyst triggers a reaction, just as a stimulus triggers a response."
+  },
+  {
+    firstPair: {
+      word1: "Democracy",
+      word2: "Citizens"
+    },
+    secondPair: {
+      word1: "Ecosystem",
+      options: ["Plants", "Animals", "Organisms", "Weather"],
+      correct: "Organisms"
+    },
+    hint: "Think about the essential components of each system",
+    explanation: "Citizens are the fundamental units of a democracy, just as organisms are the fundamental units of an ecosystem."
+  },
+  {
+    firstPair: {
+      word1: "Hypothesis",
+      word2: "Experiment"
+    },
+    secondPair: {
+      word1: "Blueprint",
+      options: ["Building", "Architecture", "Construction", "Foundation"],
+      correct: "Construction"
+    },
+    hint: "Think about plans and their execution",
+    explanation: "A hypothesis guides an experiment, just as a blueprint guides construction."
+  },
+  {
+    firstPair: {
+      word1: "Photosynthesis",
+      word2: "Glucose"
+    },
+    secondPair: {
+      word1: "Digestion",
+      options: ["Nutrients", "Stomach", "Enzymes", "Food"],
+      correct: "Nutrients"
+    },
+    hint: "Think about biological processes and their products",
+    explanation: "Photosynthesis produces glucose, just as digestion produces nutrients."
+  },
+  {
+    firstPair: {
+      word1: "Erosion",
+      word2: "Landscape"
+    },
+    secondPair: {
+      word1: "Evolution",
+      options: ["Species", "Darwin", "Genetics", "Adaptation"],
+      correct: "Species"
+    },
+    hint: "Think about processes that transform over time",
+    explanation: "Erosion shapes the landscape, just as evolution shapes species."
+  },
+  {
+    firstPair: {
+      word1: "Metaphor",
+      word2: "Literature"
+    },
+    secondPair: {
+      word1: "Variable",
+      options: ["Algebra", "Number", "Equation", "Mathematics"],
+      correct: "Algebra"
+    },
+    hint: "Think about tools used in different fields of study",
+    explanation: "Metaphors are tools in literature, just as variables are tools in algebra."
+  },
+  {
+    firstPair: {
+      word1: "Mitochondria",
+      word2: "Energy"
+    },
+    secondPair: {
+      word1: "Chloroplast",
+      options: ["Glucose", "Photosynthesis", "Green", "Light"],
+      correct: "Photosynthesis"
+    },
+    hint: "Think about cellular organelles and their primary functions",
+    explanation: "Mitochondria are responsible for energy production, just as chloroplasts are responsible for photosynthesis."
+  },
+  {
+    firstPair: {
+      word1: "Constitution",
+      word2: "Government"
+    },
+    secondPair: {
+      word1: "DNA",
+      options: ["Cell", "Genetics", "Organism", "Life"],
+      correct: "Organism"
+    },
+    hint: "Think about foundational codes that govern systems",
+    explanation: "A constitution provides the framework for government, just as DNA provides the framework for an organism."
+  },
+  {
+    firstPair: {
+      word1: "Tectonics",
+      word2: "Earthquakes"
+    },
+    secondPair: {
+      word1: "Pressure",
+      options: ["Storms", "Weather", "Wind", "Atmosphere"],
+      correct: "Storms"
+    },
+    hint: "Think about geological and meteorological causes and effects",
+    explanation: "Tectonic movements cause earthquakes, just as pressure differences cause storms."
+  },
+  {
+    firstPair: {
+      word1: "Theorem",
+      word2: "Proof"
+    },
+    secondPair: {
+      word1: "Hypothesis",
+      options: ["Theory", "Experiment", "Research", "Data"],
+      correct: "Theory"
+    },
+    hint: "Think about the progression of ideas in different fields",
+    explanation: "A theorem becomes established through proof, just as a hypothesis becomes established as a theory."
+  },
+  {
+    firstPair: {
+      word1: "Nucleus",
+      word2: "Cell"
+    },
+    secondPair: {
+      word1: "Executive",
+      options: ["Government", "President", "Law", "Politics"],
+      correct: "Government"
+    },
+    hint: "Think about central control in different systems",
+    explanation: "The nucleus controls the cell, just as the executive branch controls the government."
+  },
+  {
+    firstPair: {
+      word1: "Latitude",
+      word2: "Climate"
+    },
+    secondPair: {
+      word1: "Altitude",
+      options: ["Temperature", "Atmosphere", "Weather", "Pressure"],
+      correct: "Temperature"
+    },
+    hint: "Think about geographic factors and their effects",
+    explanation: "Latitude influences climate, just as altitude influences temperature."
+  },
   {
     firstPair: {
       word1: "Book",
@@ -466,11 +635,116 @@ const wordAssociations: WordAssociation[] = [
     },
     hint: "Think about where each vehicle travels",
     explanation: "A car travels on a road, just as a boat travels on water."
+  },
+  {
+    firstPair: {
+      word1: "Recipe",
+      word2: "Cook"
+    },
+    secondPair: {
+      word1: "Map",
+      options: ["Navigate", "Paper", "Compass", "Direction"],
+      correct: "Navigate"
+    },
+    hint: "Think about how we use these tools",
+    explanation: "We use a recipe to cook, just as we use a map to navigate."
+  },
+  {
+    firstPair: {
+      word1: "Garden",
+      word2: "Plants"
+    },
+    secondPair: {
+      word1: "Library",
+      options: ["Books", "Librarian", "Reading", "Study"],
+      correct: "Books"
+    },
+    hint: "Think about what each place contains",
+    explanation: "A garden contains plants, just as a library contains books."
+  },
+  {
+    firstPair: {
+      word1: "Paint",
+      word2: "Canvas"
+    },
+    secondPair: {
+      word1: "Music",
+      options: ["Notes", "Instrument", "Sound", "Band"],
+      correct: "Notes"
+    },
+    hint: "Think about the basic elements of each art form",
+    explanation: "Paint is applied to a canvas, just as notes are written for music."
+  },
+  {
+    firstPair: {
+      word1: "Exercise",
+      word2: "Health"
+    },
+    secondPair: {
+      word1: "Study",
+      options: ["Knowledge", "Books", "Grades", "School"],
+      correct: "Knowledge"
+    },
+    hint: "Think about the results of each activity",
+    explanation: "Exercise improves health, just as studying increases knowledge."
+  },
+  {
+    firstPair: {
+      word1: "Puzzle",
+      word2: "Solution"
+    },
+    secondPair: {
+      word1: "Question",
+      options: ["Answer", "Test", "Think", "Ask"],
+      correct: "Answer"
+    },
+    hint: "Think about what completes each thing",
+    explanation: "A puzzle needs a solution, just as a question needs an answer."
+  },
+  {
+    firstPair: {
+      word1: "Seed",
+      word2: "Flower"
+    },
+    secondPair: {
+      word1: "Caterpillar",
+      options: ["Butterfly", "Leaf", "Wing", "Cocoon"],
+      correct: "Butterfly"
+    },
+    hint: "Think about what things grow or change into",
+    explanation: "A seed grows into a flower, just as a caterpillar transforms into a butterfly."
+  },
+  {
+    firstPair: {
+      word1: "Practice",
+      word2: "Skill"
+    },
+    secondPair: {
+      word1: "Water",
+      options: ["Growth", "Plant", "Life", "Garden"],
+      correct: "Growth"
+    },
+    hint: "Think about what each action leads to",
+    explanation: "Practice leads to improved skill, just as water leads to growth."
+  },
+  {
+    firstPair: {
+      word1: "Clock",
+      word2: "Time"
+    },
+    secondPair: {
+      word1: "Thermometer",
+      options: ["Temperature", "Weather", "Heat", "Mercury"],
+      correct: "Temperature"
+    },
+    hint: "Think about what each tool measures",
+    explanation: "A clock measures time, just as a thermometer measures temperature."
   }
-];
+]);
 
 const LearningGames = () => {
-  const [selectedGame, setSelectedGame] = useState<'words' | 'logic' | null>(null);
+  const [selectedGame, setSelectedGame] = useState<'words' | 'logic' | 'crosswords' | 'citizenship' | null>(null);
+  const [selectedCrosswordTopic, setSelectedCrosswordTopic] = useState<'science' | 'geography' | 'citizenship' | 'history' | 'vocabulary' | null>(null);
   const [currentPuzzle, setCurrentPuzzle] = useState<LogicPuzzle | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [currentHintIndex, setCurrentHintIndex] = useState(0);
@@ -494,14 +768,48 @@ const LearningGames = () => {
     }
   };
 
+  const handleTextToSpeech = async (text: string) => {
+    try {
+      // Check if we have a valid API key first
+      if (!process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY) {
+        console.warn('No ElevenLabs API key found');
+        return;
+      }
+
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: text,
+          voice_id: 'your_voice_id_here', // Replace with your chosen voice ID
+          model_id: 'eleven_monolingual_v1'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Text to speech request failed');
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audio.play();
+    } catch (error) {
+      console.error('Error with text to speech:', error);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-8">
       <h2 className="text-3xl font-bold text-gray-100 mb-4">Brain Games</h2>
-      <p className="text-gray-400 mb-8">Challenge yourself with word associations and logic puzzles</p>
+      <p className="text-gray-400 mb-8">Challenge yourself with word associations, logic puzzles, and crosswords</p>
 
       {/* Game Selection */}
       {!selectedGame && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <motion.div
             whileHover={{ scale: 1.02 }}
             className="bg-blue-500/20 p-6 rounded-xl cursor-pointer"
@@ -525,7 +833,110 @@ const LearningGames = () => {
             </div>
             <p className="text-gray-300">Solve challenging puzzles that test your reasoning</p>
           </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-green-500/20 p-6 rounded-xl cursor-pointer"
+            onClick={() => setSelectedGame('crosswords')}
+          >
+            <div className="flex items-center space-x-4 mb-4">
+              <Grid className="w-8 h-8 text-green-400" />
+              <h3 className="text-xl font-bold text-green-400">Crossword Puzzles</h3>
+            </div>
+            <p className="text-gray-300">Test your knowledge with themed crossword puzzles</p>
+          </motion.div>
+
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            className="bg-red-500/20 p-6 rounded-xl cursor-pointer"
+            onClick={() => setSelectedGame('citizenship')}
+          >
+            <div className="flex items-center space-x-4 mb-4">
+              <Flag className="w-8 h-8 text-red-400" />
+              <h3 className="text-xl font-bold text-red-400">Citizenship Quiz</h3>
+            </div>
+            <p className="text-gray-300">Test your knowledge of American government and citizenship</p>
+          </motion.div>
         </div>
+      )}
+
+      {/* Crossword Topic Selection */}
+      {selectedGame === 'crosswords' && !selectedCrosswordTopic && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <button
+            onClick={() => setSelectedGame(null)}
+            className="text-gray-400 hover:text-white mb-4"
+          >
+            ← Back to Games
+          </button>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { topic: 'science', title: 'Science', color: 'green', description: 'Test your science knowledge' },
+              { topic: 'geography', title: 'Geography', color: 'yellow', description: 'Challenge yourself with geography terms' },
+              { topic: 'citizenship', title: 'Citizenship', color: 'red', description: 'Practice citizenship terms and concepts' },
+              { topic: 'history', title: 'History', color: 'blue', description: 'Explore historical events and figures' },
+              { topic: 'vocabulary', title: 'Vocabulary', color: 'purple', description: 'Enhance your word knowledge' }
+            ].map(({ topic, title, color, description }) => (
+              <motion.div
+                key={topic}
+                whileHover={{ scale: 1.02 }}
+                className={`bg-${color}-500/20 p-6 rounded-xl cursor-pointer`}
+                onClick={() => setSelectedCrosswordTopic(topic as any)}
+              >
+                <div className="flex items-center space-x-4 mb-4">
+                  <Grid className={`w-8 h-8 text-${color}-400`} />
+                  <h3 className={`text-xl font-bold text-${color}-400`}>{title}</h3>
+                </div>
+                <p className="text-gray-300">{description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Crossword Games */}
+      {selectedGame === 'crosswords' && selectedCrosswordTopic && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <button
+            onClick={() => setSelectedCrosswordTopic(null)}
+            className="text-gray-400 hover:text-white mb-4"
+          >
+            ← Back to Topics
+          </button>
+
+          {selectedCrosswordTopic === 'science' && <CrosswordPuzzle />}
+          {selectedCrosswordTopic === 'geography' && <GeographyCrossword />}
+          {selectedCrosswordTopic === 'citizenship' && <CitizenshipCrossword />}
+          {selectedCrosswordTopic === 'history' && <div className="text-gray-300">History crossword coming soon!</div>}
+          {selectedCrosswordTopic === 'vocabulary' && <div className="text-gray-300">Vocabulary crossword coming soon!</div>}
+        </motion.div>
+      )}
+
+      {/* Citizenship Quiz */}
+      {selectedGame === 'citizenship' && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="space-y-6"
+        >
+          <button
+            onClick={() => setSelectedGame(null)}
+            className="text-gray-400 hover:text-white mb-4"
+          >
+            ← Back to Games
+          </button>
+
+          <CitizenshipQuiz />
+        </motion.div>
       )}
 
       {/* Word Associations Game */}
